@@ -42,8 +42,12 @@ final class LocalizationTests: XCTestCase {
 
     func testCatalogsHaveMatchingKeysAndFormatArguments() throws {
         func catalog(_ identifier: String) throws -> [String: String] {
+            let bundle = L10n.bundle(for: identifier)
+            XCTAssertEqual(bundle.bundleURL.pathExtension, "lproj", "Must resolve the requested language bundle")
+            XCTAssertEqual(
+                bundle.bundleURL.deletingPathExtension().lastPathComponent.lowercased(), identifier.lowercased())
             let url = try XCTUnwrap(
-                L10n.bundle(for: identifier).url(forResource: "Localizable", withExtension: "strings"))
+                bundle.url(forResource: "Localizable", withExtension: "strings"))
             let data = try Data(contentsOf: url)
             return try XCTUnwrap(PropertyListSerialization.propertyList(from: data, format: nil) as? [String: String])
         }

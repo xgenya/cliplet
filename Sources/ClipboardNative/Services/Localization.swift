@@ -29,9 +29,16 @@ enum L10n {
     }
 
     nonisolated static func bundle(for identifier: String) -> Bundle {
-        guard let path = AppResources.bundle.path(forResource: identifier, ofType: "lproj"),
+        // SwiftPM's native build lowercases language tags (zh-hans), while
+        // Swift Build preserves their spelling (zh-Hans). Bundle lookup is case-sensitive.
+        let resources = AppResources.bundle
+        guard
+            let localization = resources.localizations.first(where: {
+                $0.caseInsensitiveCompare(identifier) == .orderedSame
+            }),
+            let path = resources.path(forResource: localization, ofType: "lproj"),
             let bundle = Bundle(path: path)
-        else { return AppResources.bundle }
+        else { return resources }
         return bundle
     }
 
