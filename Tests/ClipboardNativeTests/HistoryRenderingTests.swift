@@ -69,7 +69,7 @@ final class HistoryRenderingTests: XCTestCase {
     }
 
     @MainActor
-    func testSelectionDoesNotRebuildRowsAndPinMovesKeepIdentity() {
+    func testSelectionDoesNotRebuildRowsAndPinMovesKeepIdentity() async {
         let (settings, cleanup) = isolatedSettings()
         defer { cleanup() }
         let items = (0..<1_000).map { fixtureItem("Entry \($0)") }

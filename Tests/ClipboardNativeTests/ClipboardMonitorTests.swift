@@ -18,6 +18,8 @@ private actor SuspendedRecognizer: ImageRecognizing {
     }
 }
 
+// Use async entry points for services with isolated deinit on the CI runtime.
+// https://github.com/swiftlang/swift/issues/85663
 final class ClipboardMonitorTests: XCTestCase {
     @MainActor
     func testImageCaptureDoesNotWaitForRecognitionAndTextCaptureContinues() async throws {
@@ -51,7 +53,7 @@ final class ClipboardMonitorTests: XCTestCase {
     }
 
     @MainActor
-    func testExcludedPrivateAndPausedContentNeverEntersHistory() {
+    func testExcludedPrivateAndPausedContentNeverEntersHistory() async {
         let (settings, cleanup) = isolatedSettings()
         defer { cleanup() }
         let store = ClipboardStore(settings: settings, repository: MemoryHistoryRepository(), maintenanceInterval: nil)
@@ -80,7 +82,7 @@ final class ClipboardMonitorTests: XCTestCase {
     }
 
     @MainActor
-    func testOwnRichTextWritesAreIgnoredUsingFinalChangeCount() throws {
+    func testOwnRichTextWritesAreIgnoredUsingFinalChangeCount() async throws {
         let (settings, cleanup) = isolatedSettings()
         defer { cleanup() }
         let store = ClipboardStore(settings: settings, repository: MemoryHistoryRepository(), maintenanceInterval: nil)
@@ -101,7 +103,7 @@ final class ClipboardMonitorTests: XCTestCase {
     }
 
     @MainActor
-    func testMissingPayloadDoesNotClearClipboard() {
+    func testMissingPayloadDoesNotClearClipboard() async {
         let (settings, cleanup) = isolatedSettings()
         defer { cleanup() }
         let pasteboard = MemoryClipboard()

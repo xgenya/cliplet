@@ -2,6 +2,8 @@ import Combine
 import XCTest
 @testable import ClipboardNative
 
+// Async entry points avoid the isolated-deinit runtime bug in synchronous XCTest.
+// https://github.com/swiftlang/swift/issues/85663
 final class ClipboardStoreTests: XCTestCase {
     @MainActor
     func testStartupAndPeriodicRetentionPersistWhileRecordingIsPaused() async throws {
@@ -41,7 +43,7 @@ final class ClipboardStoreTests: XCTestCase {
     }
 
     @MainActor
-    func testDuplicateKeepsIdentityAndUserMetadataButUpdatesContent() throws {
+    func testDuplicateKeepsIdentityAndUserMetadataButUpdatesContent() async throws {
         let (settings, cleanup) = isolatedSettings()
         defer { cleanup() }
         let store = ClipboardStore(settings: settings, repository: MemoryHistoryRepository(), maintenanceInterval: nil)
@@ -62,7 +64,7 @@ final class ClipboardStoreTests: XCTestCase {
     }
 
     @MainActor
-    func testSelectionAndSearchAreIndependentOfPersistence() {
+    func testSelectionAndSearchAreIndependentOfPersistence() async {
         let (settings, cleanup) = isolatedSettings()
         defer { cleanup() }
         let store = ClipboardStore(settings: settings, repository: MemoryHistoryRepository(), maintenanceInterval: nil)
@@ -81,7 +83,7 @@ final class ClipboardStoreTests: XCTestCase {
     }
 
     @MainActor
-    func testActionMenuCannotRemainOpenWithoutAVisibleEntry() {
+    func testActionMenuCannotRemainOpenWithoutAVisibleEntry() async {
         let (settings, cleanup) = isolatedSettings()
         defer { cleanup() }
         let store = ClipboardStore(settings: settings, repository: MemoryHistoryRepository(), maintenanceInterval: nil)
@@ -136,7 +138,7 @@ final class ClipboardStoreTests: XCTestCase {
     }
 
     @MainActor
-    func testLateRecognitionCannotResurrectDeletedHistory() {
+    func testLateRecognitionCannotResurrectDeletedHistory() async {
         let (settings, cleanup) = isolatedSettings()
         defer { cleanup() }
         let store = ClipboardStore(settings: settings, repository: MemoryHistoryRepository(), maintenanceInterval: nil)
