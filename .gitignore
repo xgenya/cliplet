@@ -1,0 +1,42 @@
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.xcscmblueprint
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+
+# Local configuration and secrets
+.env
+.env.*
+*.p12
+*.mobileprovision
+*.cer
+
+# Local clipboard databases and payloads
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+ClipboardData/
+Payloads/
+
+# Release credentials
+*.p8
+*.keychain-db
+
+# Local planning/review documents (README is the public project entry point)
+/docs/
+*.md
+!/README.md
+
+# Local history backup and unpublished design originals
+/.local-backups/
+/Resources/Brand/

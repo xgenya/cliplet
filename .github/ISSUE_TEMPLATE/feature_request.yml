@@ -1,0 +1,13 @@
+name: Feature request
+description: Describe the workflow you want to improve.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or workflow
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior and alternatives

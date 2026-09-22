@@ -1,0 +1,22 @@
+name: Bug report
+description: Report a reproducible problem using synthetic data.
+body:
+  - type: input
+    id: environment
+    attributes:
+      label: App version, macOS version and CPU architecture
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Use synthetic text and images. Do not attach real clipboard history.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true

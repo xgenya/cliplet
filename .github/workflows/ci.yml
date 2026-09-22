@@ -1,0 +1,73 @@
+name: macOS CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: macos-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test-and-package:
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+          xcrun swift-format --version
+      - name: Format and repository checks
+        run: make lint
+      - name: Strict concurrency and regression tests
+        run: |
+          mkdir -p build/reports
+          set -o pipefail
+          make test 2>&1 | tee build/reports/tests.log
+      - name: Build Universal app and test clean packaging
+        run: |
+          UNIVERSAL=1 make package-test
+          python3 scripts/check-binary.py build/Cliplet.app/Contents/MacOS/ClipboardNative build/symbols/ClipboardNative.dSYM
+      - name: Measure release performance
+        run: |
+          set -o pipefail
+          make performance 2>&1 | tee build/reports/performance.log
+      - name: Archive relocatable package
+        run: ditto -c -k --sequesterRsrc --keepParent build/Cliplet.app build/Cliplet-ci.zip
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cliplet-app
+          path: build/Cliplet-ci.zip
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: quality-reports
+          path: build/reports/
+          retention-days: 14
+  minimum-os-smoke:
+    needs: test-and-package
+    # GitHub plans to retire this image in November 2026; replace with a macOS 14
+    # self-hosted runtime runner before then if macOS 14 remains supported.
+    runs-on: macos-14
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: cliplet-app
+          path: build
+      - name: Run packaged application on minimum macOS
+        run: |
+          ditto -x -k build/Cliplet-ci.zip build/relocated
+          codesign --verify --deep --strict build/relocated/Cliplet.app
+          python3 scripts/smoke-app.py build/relocated/Cliplet.app

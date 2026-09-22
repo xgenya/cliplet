@@ -1,0 +1,17 @@
+[
+  {
+    "id": "11111111-1111-4111-8111-111111111111",
+    "createdAt": 800000000,
+    "lastUsedAt": 800000001,
+    "kind": "text",
+    "text": "Synthetic historical fixture",
+    "rtfData": "e1xydGYxIHRlc3R9",
+    "htmlData": "PGI+dGVzdDwvYj4=",
+    "fileURLs": [],
+    "sourceBundleIdentifier": "fixture.source",
+    "sourceApplicationName": "Fixture App",
+    "isPinned": true,
+    "useCount": 3,
+    "contentHash": "fixture-v0-text"
+  }
+]

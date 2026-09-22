@@ -1,0 +1,72 @@
+name: Prepare signed release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag (vMAJOR.MINOR.PATCH)
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: signed-release
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: macos-15
+    environment: release
+    timeout-minutes: 45
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate requested tag
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          test "$RELEASE_TAG" = "v$(cat VERSION)"
+          test "$(git describe --tags --exact-match HEAD)" = "$RELEASE_TAG"
+      - name: Sign, notarize and archive
+        shell: bash
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.DEVELOPER_ID_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+          SIGNING_IDENTITY: ${{ secrets.SIGNING_IDENTITY }}
+          NOTARY_KEY_BASE64: ${{ secrets.NOTARY_KEY_BASE64 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          : "${CERTIFICATE_BASE64:?Configure release secrets}"
+          : "${CERTIFICATE_PASSWORD:?Configure certificate password}"
+          : "${SIGNING_IDENTITY:?Configure signing identity}"
+          : "${NOTARY_KEY_BASE64:?Configure notarization key}"
+          : "${NOTARY_KEY_ID:?Configure key ID}"
+          : "${NOTARY_ISSUER_ID:?Configure issuer ID}"
+          export SIGNING_KEYCHAIN="$RUNNER_TEMP/cliplet-signing.keychain-db"
+          export NOTARY_KEYCHAIN_PROFILE=cliplet-release
+          keychain_password=$(openssl rand -hex 24)
+          echo "::add-mask::$keychain_password"
+          trap 'security delete-keychain "$SIGNING_KEYCHAIN" || true; rm -f "$RUNNER_TEMP/certificate.p12" "$RUNNER_TEMP/notary.p8"' EXIT
+          printf '%s' "$CERTIFICATE_BASE64" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          printf '%s' "$NOTARY_KEY_BASE64" | base64 --decode > "$RUNNER_TEMP/notary.p8"
+          chmod 600 "$RUNNER_TEMP/certificate.p12" "$RUNNER_TEMP/notary.p8"
+          security create-keychain -p "$keychain_password" "$SIGNING_KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$SIGNING_KEYCHAIN"
+          security unlock-keychain -p "$keychain_password" "$SIGNING_KEYCHAIN"
+          security import "$RUNNER_TEMP/certificate.p12" -P "$CERTIFICATE_PASSWORD" -k "$SIGNING_KEYCHAIN" -t cert -f pkcs12 -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "$keychain_password" "$SIGNING_KEYCHAIN"
+          security list-keychains -d user -s "$SIGNING_KEYCHAIN"
+          xcrun notarytool store-credentials "$NOTARY_KEYCHAIN_PROFILE" --key "$RUNNER_TEMP/notary.p8" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" --keychain "$SIGNING_KEYCHAIN"
+          make release
+      - uses: actions/upload-artifact@v7
+        with:
+          name: signed-release-${{ inputs.tag }}
+          path: build/releases/
+          if-no-files-found: error
+          retention-days: 30
