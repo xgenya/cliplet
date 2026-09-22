@@ -23,6 +23,7 @@ struct FileIconStack: View {
     let urls: [URL]
     let maximumIconSize: CGFloat
     var showsCount = false
+    @Environment(\.displayScale) private var displayScale
 
     var body: some View {
         GeometryReader { geometry in
@@ -38,8 +39,7 @@ struct FileIconStack: View {
                         .frame(width: side, height: side)
                 } else {
                     ForEach(Array(urls.prefix(3).enumerated().reversed()), id: \.offset) { index, url in
-                        Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
-                            .resizable().scaledToFit()
+                        WorkspaceIconView(source: .file(url), pixels: Int(ceil(maximumIconSize * displayScale)))
                             .frame(width: side, height: side)
                             .shadow(color: .black.opacity(stacked ? 0.14 : 0), radius: side * 0.025, y: side * 0.02)
                             .rotationEffect(.degrees(index == 0 ? 0 : (index == 1 ? -12 : 10)))

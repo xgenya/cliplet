@@ -34,7 +34,8 @@ extension ClipboardItem {
             return L10n.format("%d files", fileURLs.count)
         }
         if kind == .image { return L10n.tr("Image") }
-        let firstLine = text?.split(whereSeparator: \.isNewline).first.map(String.init) ?? kind.title
+        let firstLine =
+            text?.prefix(200).split(maxSplits: 1, whereSeparator: \.isNewline).first.map(String.init) ?? kind.title
         return firstLine.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 

@@ -4,6 +4,16 @@ import XCTest
 /// Opt-in, release-mode measurements. CI archives the report rather than imposing
 /// a machine-dependent wall-clock threshold on developer laptops.
 final class PerformanceTests: XCTestCase {
+    func testGroupTenThousandHistoryRows() {
+        let now = Date()
+        let items = (0..<10_000).map {
+            fixtureItem("Entry \($0)", date: now.addingTimeInterval(-Double($0 * 60)), pinned: $0 % 97 == 0)
+        }
+        measure(metrics: [XCTClockMetric(), XCTMemoryMetric()]) {
+            XCTAssertEqual(HistoryListRow.make(items, now: now).count, 10_004)
+        }
+    }
+
     func testSearchTenThousandEntries() {
         let items = (0..<10_000).map { fixtureItem("synthetic clipboard entry \($0)") }
         measure(metrics: [XCTClockMetric(), XCTMemoryMetric()]) {

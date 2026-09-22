@@ -138,34 +138,14 @@ struct MainView: View {
         }
     }
 
-    private var itemGroups: [(title: String, items: [ClipboardItem])] {
-        let calendar = Calendar.current
-        let items = viewState.visibleItems
-        return [
-            (L10n.tr("Pinned"), items.filter(\.isPinned)),
-            (L10n.tr("Today"), items.filter { !$0.isPinned && calendar.isDateInToday($0.createdAt) }),
-            (L10n.tr("Yesterday"), items.filter { !$0.isPinned && calendar.isDateInYesterday($0.createdAt) }),
-            (
-                L10n.tr("Earlier"),
-                items.filter {
-                    !$0.isPinned && !calendar.isDateInToday($0.createdAt) && !calendar.isDateInYesterday($0.createdAt)
-                }
-            ),
-        ].filter { !$0.1.isEmpty }
-    }
-
-    private var listRows: [HistoryListRow] {
-        itemGroups.flatMap { group in [.header(group.title)] + group.items.map(HistoryListRow.item) }
-    }
-
     private var itemList: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 3) {
-                    ForEach(listRows) { row in
+                    ForEach(viewState.listRows) { row in
                         switch row {
-                        case .header(let title):
-                            Text(title)
+                        case .header(let section):
+                            Text(L10n.tr(section.rawValue))
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, 10)
@@ -216,12 +196,10 @@ struct MainView: View {
                 Group {
                     switch item.kind {
                     case .image:
-                        if let data = item.resolvedImageData, let image = NSImage(data: data) {
-                            Image(nsImage: image).resizable().scaledToFit()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .padding()
-                                .accessibilityLabel(item.customName ?? L10n.tr("Clipboard image"))
-                        }
+                        ClipboardImageView(item: item, pixels: 1_200)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding()
+                            .accessibilityLabel(item.customName ?? L10n.tr("Clipboard image"))
                     case .color:
                         ColorPreview(value: item.text ?? "")
                     case .file:
@@ -432,21 +410,10 @@ struct MainView: View {
     }
 }
 
-private enum HistoryListRow: Identifiable {
-    case header(String)
-    case item(ClipboardItem)
-
-    var id: String {
-        switch self {
-        case .header(let title): return "section-" + title
-        case .item(let item): return item.id.uuidString
-        }
-    }
-}
-
 private struct ClipboardRow: View {
     let item: ClipboardItem
     let language: AppLanguage
+    @Environment(\.displayScale) private var displayScale
 
     var body: some View {
         HStack {
@@ -466,10 +433,8 @@ private struct ClipboardRow: View {
     }
 
     @ViewBuilder private var thumbnail: some View {
-        if item.kind == .image, let data = item.resolvedImageData, let image = NSImage(data: data) {
-            Image(nsImage: image)
-                .resizable()
-                .scaledToFill()
+        if item.kind == .image {
+            ClipboardImageView(item: item, pixels: Int(ceil(OverlayMetrics.thumbnailSize * displayScale)), mode: .fill)
                 .frame(width: OverlayMetrics.thumbnailSize, height: OverlayMetrics.thumbnailSize)
                 .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: 6))

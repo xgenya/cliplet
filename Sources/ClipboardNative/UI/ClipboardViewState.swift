@@ -9,15 +9,26 @@ final class ClipboardViewState: ObservableObject {
     @Published var showActions = false
     private(set) var actionPresentationID = UUID()
     @Published private(set) var visibleItems: [ClipboardItem] = []
+    @Published private(set) var listRows: [HistoryListRow] = []
+    private var itemIndices: [UUID: Int] = [:]
     private let store: ClipboardStore
     private var subscription: AnyCancellable?
+    private var calendarSubscription: AnyCancellable?
 
     init(store: ClipboardStore) {
         self.store = store
         subscription = store.$items.sink { [weak self] items in self?.refresh(items) }
+        calendarSubscription = NotificationCenter.default.publisher(for: .NSCalendarDayChanged)
+            .receive(on: RunLoop.main).sink { [weak self] _ in
+                guard let self else { return }
+                self.listRows = HistoryListRow.make(self.visibleItems)
+            }
     }
 
-    var selectedItem: ClipboardItem? { visibleItems.first { $0.id == selectedID } ?? visibleItems.first }
+    var selectedItem: ClipboardItem? {
+        if let selectedID, let index = itemIndices[selectedID] { return visibleItems[index] }
+        return visibleItems.first
+    }
 
     func toggleActions() {
         if showActions {
@@ -30,12 +41,12 @@ final class ClipboardViewState: ObservableObject {
 
     func select(offset: Int) {
         guard !visibleItems.isEmpty else { selectedID = nil; return }
-        let current = visibleItems.firstIndex { $0.id == selectedID } ?? 0
+        let current = selectedID.flatMap { itemIndices[$0] } ?? 0
         selectedID = visibleItems[min(max(current + offset, 0), visibleItems.count - 1)].id
     }
 
     func selectFirstIfNeeded() {
-        if !visibleItems.contains(where: { $0.id == selectedID }) { selectedID = visibleItems.first?.id }
+        if selectedID.flatMap({ itemIndices[$0] }) == nil { selectedID = visibleItems.first?.id }
     }
 
     func cycleFilter() {
@@ -46,6 +57,9 @@ final class ClipboardViewState: ObservableObject {
 
     private func refresh(_ items: [ClipboardItem]) {
         visibleItems = HistoryPolicy.matching(items, query: query, kind: filter)
+        itemIndices = Dictionary(
+            visibleItems.enumerated().map { ($0.element.id, $0.offset) }, uniquingKeysWith: { first, _ in first })
+        listRows = HistoryListRow.make(visibleItems)
         selectFirstIfNeeded()
         if visibleItems.isEmpty { showActions = false }
     }

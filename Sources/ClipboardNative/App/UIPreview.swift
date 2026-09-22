@@ -47,6 +47,28 @@ enum UIPreview {
                 sourceBundleIdentifier: "com.apple.finder", sourceApplicationName: "Finder",
                 isPinned: false, useCount: 0, contentHash: "preview-files-\(index)")
         }
-        return textItems + fileItems
+        let samplesForHistory = textItems + fileItems
+        #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("--stress-history") {
+                let image = AppResources.bundle.url(forResource: "AppIcon", withExtension: "png")
+                    .flatMap { try? Data(contentsOf: $0) }
+                return (0..<10_000).map { index in
+                    var item = samplesForHistory[index % samplesForHistory.count]
+                    item.id = UUID()
+                    item.createdAt = Date().addingTimeInterval(-Double(index * 60))
+                    item.isPinned = index % 97 == 0
+                    item.customName = "Preview \(index) · " + (item.text?.prefix(40).description ?? "Files")
+                    item.contentHash = "stress-\(index)"
+                    if index % 4 == 0, let image {
+                        item.kind = .image
+                        item.imageData = image
+                        item.text = nil
+                        item.fileURLs = []
+                    }
+                    return item
+                }
+            }
+        #endif
+        return samplesForHistory
     }
 }
