@@ -12,11 +12,11 @@ VERSION="$(<VERSION)"
 NOTARY_OPTIONS=(--keychain-profile "$NOTARY_KEYCHAIN_PROFILE")
 if [[ -n "${SIGNING_KEYCHAIN:-}" ]]; then NOTARY_OPTIONS+=(--keychain "$SIGNING_KEYCHAIN"); fi
 make check
-UNIVERSAL=1 ./scripts/build-app.sh release
+./scripts/build-app.sh release
 python3 scripts/smoke-app.py build/Cliplet.app
 python3 scripts/check-binary.py build/Cliplet.app/Contents/MacOS/ClipboardNative build/symbols/ClipboardNative.dSYM
 ARCHITECTURES="$(lipo -archs build/Cliplet.app/Contents/MacOS/ClipboardNative)"
-[[ "$ARCHITECTURES" == *arm64* && "$ARCHITECTURES" == *x86_64* ]] || { print -u2 'Missing release architecture'; exit 1; }
+[[ "$ARCHITECTURES" == arm64 ]] || { print -u2 'Release must contain only arm64'; exit 1; }
 OUTPUT_DIR="$ROOT_DIR/build/releases/$VERSION"
 [[ ! -e "$OUTPUT_DIR" ]] || { print -u2 'Release output already exists; preserve or move it first'; exit 2; }
 mkdir -p "$OUTPUT_DIR"

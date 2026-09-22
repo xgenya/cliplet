@@ -18,12 +18,12 @@ def identities(path):
     return result
 
 assert identities(binary) == identities(symbols), "dSYM does not match the executable"
-assert set(identities(binary)) == {"arm64", "x86_64"}, "Release must include both architectures"
+assert set(identities(binary)) == {"arm64"}, "Release must contain only the Apple Silicon (arm64) architecture"
 build_versions = output("xcrun", "vtool", "-show-build", str(binary))
 minimums = re.findall(r"minos\s+([\d.]+)", build_versions)
-assert len(minimums) == 2 and all(value == "14.0" for value in minimums), "Unexpected minimum macOS version"
+assert minimums == ["14.0"], "Unexpected minimum macOS version"
 sdks = re.findall(r"sdk\s+([\d.]+)", build_versions)
 expected_sdk = output("xcrun", "--sdk", "macosx", "--show-sdk-version").strip()
-assert len(sdks) == 2 and all(value == expected_sdk for value in sdks), "Linked SDK must match the build SDK"
+assert sdks == [expected_sdk], "Linked SDK must match the build SDK"
 assert int(expected_sdk.split(".")[0]) >= 26, "Liquid Glass requires building with macOS SDK 26 or later"
-print("Universal architectures, deployment target, linked SDK and dSYM UUIDs verified")
+print("Apple Silicon architecture, deployment target, linked SDK and dSYM UUID verified")

@@ -9,6 +9,7 @@
 <p align="center">
   <a href="https://github.com/xgenya/cliplet/actions/workflows/ci.yml"><img src="https://github.com/xgenya/cliplet/actions/workflows/ci.yml/badge.svg" alt="macOS CI"></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-111111?logo=apple" alt="macOS 14+">
+  <img src="https://img.shields.io/badge/Apple_Silicon-arm64-111111?logo=apple" alt="Apple Silicon only">
   <img src="https://img.shields.io/badge/Swift-6.2%2B-F05138?logo=swift&logoColor=white" alt="Swift 6.2+">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-00897B" alt="MIT License"></a>
 </p>
@@ -39,7 +40,9 @@
 
 ## 安装与构建
 
-当前提供源码构建。运行需要 **macOS 14 或更新版本**；构建需要 **Xcode 26+（Swift 6.2+）** 和命令行工具，无第三方 Swift 包依赖。
+**仅支持 Apple Silicon Mac（M1 及更新机型），不支持 Intel Mac。** 运行需要 **macOS 14 或更新版本**。
+
+当前提供源码构建。构建需要 **Xcode 26+（Swift 6.2+）** 和命令行工具，无第三方 Swift 包依赖。
 
 ```bash
 git clone https://github.com/xgenya/cliplet.git
@@ -48,11 +51,7 @@ make app
 open build/Cliplet.app
 ```
 
-生成的应用位于 `build/Cliplet.app`，可以复制到“应用程序”目录。默认构建适配当前 Mac；同时构建 Apple Silicon 与 Intel 版本：
-
-```bash
-UNIVERSAL=1 make app
-```
+生成的 arm64 应用位于 `build/Cliplet.app`，可以复制到“应用程序”目录。开发版和发行版均仅构建 Apple Silicon 版本。
 
 Cliplet 常驻菜单栏。按 **⌥V** 或从菜单栏打开历史窗口，全局快捷键可以在设置中修改。自动粘贴需要辅助功能权限；未授权时仍可复制条目，再手动按 **⌘V** 粘贴。
 
@@ -98,7 +97,7 @@ make performance  # Release 模式性能测量
 # 设置窗口：再添加 --settings-preview
 ```
 
-提交前请运行 `make format` 和 `make check`。CI 会构建 Universal 应用，并执行最低支持系统上的打包启动检查。
+提交前请运行 `make format` 和 `make check`。CI 会构建并验证仅含 arm64 的应用，并执行 macOS 14 上的打包启动检查。
 
 ## 许可证
 

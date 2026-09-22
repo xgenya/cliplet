@@ -2,7 +2,7 @@ SWIFT_ENV = env CLANG_MODULE_CACHE_PATH=/tmp/clipboard-native-clang-cache SWIFTP
 MACOS_SDK_PATH := $(shell xcrun --sdk macosx --show-sdk-path)
 MACOS_SDK_VERSION := $(shell xcrun --sdk macosx --show-sdk-version)
 # Record the SDK actually used, separately from the macOS 14 deployment target.
-SWIFT_FLAGS = --disable-sandbox --scratch-path .build --sdk "$(MACOS_SDK_PATH)" -Xswiftc -warnings-as-errors -Xlinker -platform_version -Xlinker macos -Xlinker 14.0 -Xlinker "$(MACOS_SDK_VERSION)"
+SWIFT_FLAGS = --arch arm64 --disable-sandbox --scratch-path .build --sdk "$(MACOS_SDK_PATH)" -Xswiftc -warnings-as-errors -Xlinker -platform_version -Xlinker macos -Xlinker 14.0 -Xlinker "$(MACOS_SDK_VERSION)"
 
 .PHONY: build test app dev-app run format lint check package-test performance release clean
 

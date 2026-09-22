@@ -30,9 +30,9 @@ jobs:
           mkdir -p build/reports
           set -o pipefail
           make test 2>&1 | tee build/reports/tests.log
-      - name: Build Universal app and test clean packaging
+      - name: Build Apple Silicon app and test clean packaging
         run: |
-          UNIVERSAL=1 make package-test
+          make package-test
           python3 scripts/check-binary.py build/Cliplet.app/Contents/MacOS/ClipboardNative build/symbols/ClipboardNative.dSYM
       - name: Measure release performance
         run: |
