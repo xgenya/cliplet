@@ -81,6 +81,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.handle(event) == true ? nil : event
         }
         reopenRequests?.onRequest = { [weak self] in self?.showPanel() }
+        reopenRequests?.onReplacement = { NSApp.terminate(nil) }
         if UIPreview.enabled {
             NSApp.appearance = NSAppearance(
                 named: ProcessInfo.processInfo.arguments.contains("--light") ? .aqua : .darkAqua)
@@ -239,7 +240,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func openSettings() { showSettings() }
 
     private func togglePanel() {
-        if panel?.isVisible == true { closePanel() } else { showPanel() }
+        // A panel hidden on deactivation can still report isVisible. Only
+        // toggle off the focused panel; otherwise bring it back on the first press.
+        if NSApp.isActive, let panel, panel.isVisible, panel.isKeyWindow {
+            closePanel()
+        } else {
+            showPanel()
+        }
     }
 
     private func showPanel() {

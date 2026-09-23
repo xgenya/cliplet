@@ -36,6 +36,33 @@ final class EngineeringTests: XCTestCase {
         XCTAssertEqual(delivered, 2)
     }
 
+    func testInstanceOwnerCannotBeOverwrittenByCompetingLaunch() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("Cliplet-owner-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: url) }
+        do {
+            let lock = try XCTUnwrap(AppInstanceLock.acquire(at: url, build: "first"))
+            try withExtendedLifetime(lock) {
+                XCTAssertEqual(AppInstanceLock.owner(at: url)?.build, "first")
+                XCTAssertNil(try AppInstanceLock.acquire(at: url, build: "second"))
+                XCTAssertEqual(AppInstanceLock.owner(at: url)?.build, "first")
+            }
+        }
+        let replacement = try XCTUnwrap(AppInstanceLock.acquire(at: url, build: "second"))
+        withExtendedLifetime(replacement) {
+            XCTAssertEqual(AppInstanceLock.owner(at: url)?.build, "second")
+        }
+    }
+
+    @MainActor
+    func testReplacementDuringLaunchWaitsForQuitHandler() {
+        let requests = AppReopenRequests()
+        var quits = 0
+        requests.receiveReplacement()
+        XCTAssertEqual(quits, 0)
+        requests.onReplacement = { quits += 1 }
+        XCTAssertEqual(quits, 1)
+    }
+
     func testDevelopmentAndProductionIdentitiesAreDistinct() {
         XCTAssertNotEqual(AppEnvironment.development.bundleIdentifier, AppEnvironment.production.bundleIdentifier)
         XCTAssertNotEqual(AppEnvironment.development.dataDirectoryName, AppEnvironment.production.dataDirectoryName)
