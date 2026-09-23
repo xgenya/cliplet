@@ -1,7 +1,7 @@
 import XCTest
-@testable import ClipboardNative
+@testable import Cliplet
 
-final class ClipboardNativeTests: XCTestCase {
+final class ClipletTests: XCTestCase {
     func testContentClassification() {
         XCTAssertEqual("https://example.com/path".detectedClipboardKind, .link)
         XCTAssertEqual("hello@example.com".detectedClipboardKind, .email)

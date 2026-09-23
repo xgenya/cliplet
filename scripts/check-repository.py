@@ -13,7 +13,7 @@ with (root / "Resources/Info.plist").open("rb") as stream:
     plist = plistlib.load(stream)
 assert plist["LSMinimumSystemVersion"] == "14.0"
 assert plist["CFBundleIdentifier"] == "com.clipboardnative.macos"
-for fixture in (root / "Tests/ClipboardNativeTests/Fixtures").glob("*.json"):
+for fixture in (root / "Tests/ClipletTests/Fixtures").glob("*.json"):
     json.loads(fixture.read_text())
 for script in (root / "scripts").glob("*.sh"):
     subprocess.run(["zsh", "-n", str(script)], check=True)

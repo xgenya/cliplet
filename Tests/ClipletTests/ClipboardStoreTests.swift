@@ -1,6 +1,6 @@
 import Combine
 import XCTest
-@testable import ClipboardNative
+@testable import Cliplet
 
 // Async entry points avoid the isolated-deinit runtime bug in synchronous XCTest.
 // https://github.com/swiftlang/swift/issues/85663

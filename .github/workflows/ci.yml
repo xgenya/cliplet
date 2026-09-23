@@ -33,7 +33,7 @@ jobs:
       - name: Build Apple Silicon app and test clean packaging
         run: |
           make package-test
-          python3 scripts/check-binary.py build/Cliplet.app/Contents/MacOS/ClipboardNative build/symbols/ClipboardNative.dSYM
+          python3 scripts/check-binary.py build/Cliplet.app/Contents/MacOS/Cliplet build/symbols/Cliplet.dSYM
       - name: Measure release performance
         run: |
           set -o pipefail

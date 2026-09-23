@@ -1,7 +1,7 @@
 import AppKit
 import Combine
 import XCTest
-@testable import ClipboardNative
+@testable import Cliplet
 
 private actor SuspendedRecognizer: ImageRecognizing {
     private(set) var started = false

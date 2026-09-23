@@ -3,23 +3,23 @@
 import PackageDescription
 
 let package = Package(
-    name: "ClipboardNative",
+    name: "Cliplet",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "ClipboardNative", targets: ["ClipboardNative"])
+        .executable(name: "Cliplet", targets: ["Cliplet"])
     ],
     targets: [
         .executableTarget(
-            name: "ClipboardNative",
-            path: "Sources/ClipboardNative",
+            name: "Cliplet",
+            path: "Sources/Cliplet",
             resources: [.process("Resources")],
             swiftSettings: [.swiftLanguageMode(.v5), .unsafeFlags(["-strict-concurrency=complete"])]
         ),
         .testTarget(
-            name: "ClipboardNativeTests",
-            dependencies: ["ClipboardNative"],
-            path: "Tests/ClipboardNativeTests",
+            name: "ClipletTests",
+            dependencies: ["Cliplet"],
+            path: "Tests/ClipletTests",
             resources: [.copy("Fixtures")],
             swiftSettings: [.swiftLanguageMode(.v5), .unsafeFlags(["-strict-concurrency=complete"])]
         ),

@@ -18,6 +18,10 @@ enum AppEnvironment: Sendable {
     }
 
     var dataDirectoryName: String {
+        self == .development ? "Cliplet-Development" : "Cliplet"
+    }
+
+    var legacyDataDirectoryName: String {
         self == .development ? "ClipboardNative-Development" : "ClipboardNative"
     }
 

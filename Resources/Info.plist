@@ -10,7 +10,7 @@
 		<string>zh-Hans</string>
 	</array>
 	<key>CFBundleExecutable</key>
-	<string>ClipboardNative</string>
+	<string>Cliplet</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.clipboardnative.macos</string>
 	<key>CFBundleInfoDictionaryVersion</key>

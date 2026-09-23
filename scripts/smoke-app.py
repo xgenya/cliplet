@@ -5,5 +5,5 @@ import subprocess
 import sys
 
 app = pathlib.Path(sys.argv[1]).resolve()
-subprocess.run([str(app / "Contents/MacOS/ClipboardNative"), "--smoke-test"],
+subprocess.run([str(app / "Contents/MacOS/Cliplet"), "--smoke-test"],
                cwd=app.parent, check=True, timeout=30)

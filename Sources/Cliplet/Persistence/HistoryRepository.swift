@@ -50,8 +50,28 @@ final class HistoryRepository: HistoryPersistence, @unchecked Sendable {
     }
 
     static var defaultDirectory: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(AppEnvironment.current.dataDirectoryName, isDirectory: true)
+        directory(
+            in: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0],
+            environment: .current)
+    }
+
+    static func directory(in support: URL, environment: AppEnvironment) -> URL {
+        let destination = support.appendingPathComponent(environment.dataDirectoryName, isDirectory: true)
+        let legacy = support.appendingPathComponent(environment.legacyDataDirectoryName, isDirectory: true)
+        let files = FileManager.default
+        guard files.fileExists(atPath: legacy.path) else { return destination }
+        if files.fileExists(atPath: destination.path) {
+            // Never overwrite either history when both locations already exist.
+            return files.fileExists(atPath: destination.appendingPathComponent("history.json").path)
+                ? destination : legacy
+        }
+        do {
+            try files.moveItem(at: legacy, to: destination)
+            return destination
+        } catch {
+            // Continue using the existing history if the move is unavailable.
+            return legacy
+        }
     }
 
     func load() throws -> [ClipboardItem] {

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Sources/ClipboardNative/Resources/AppIcon.png" width="96" alt="Cliplet 图标">
+  <img src="Sources/Cliplet/Resources/AppIcon.png" width="96" alt="Cliplet 图标">
 </p>
 
 <h1 align="center">Cliplet · 拾片</h1>
@@ -45,8 +45,8 @@
 当前提供源码构建。构建需要 **Xcode 26+（Swift 6.2+）** 和命令行工具，无第三方 Swift 包依赖。
 
 ```bash
-git clone https://github.com/xgenya/cliplet.git
-cd cliplet
+git clone https://github.com/xgenya/cliplet.git Cliplet
+cd Cliplet
 make app
 open build/Cliplet.app
 ```
@@ -77,7 +77,7 @@ Cliplet 常驻菜单栏。按 **⌥V** 或从菜单栏打开历史窗口，全�
 
 历史记录保存在本机，不提供云同步，也不上传剪贴板内容。图片文字与二维码识别在设备上完成。默认排除 Apple Passwords、钥匙串访问、1Password、Bitwarden 和 LastPass，并跳过带受支持敏感类型标记的剪贴板数据；你也可以添加排除应用或暂停记录。
 
-正式版数据位于 `~/Library/Application Support/ClipboardNative/`，包含历史元数据和附件。**历史文件未单独加密**，请按需设置保留期限，避免保存敏感内容。排除规则不保证识别所有来源的秘密信息。
+正式版数据位于 `~/Library/Application Support/Cliplet/`，包含历史元数据和附件。升级时，应用会将旧版 `ClipboardNative/` 目录迁移到此处；如果迁移失败，会继续使用旧目录，避免丢失历史。**历史文件未单独加密**，请按需设置保留期限，避免保存敏感内容。排除规则不保证识别所有来源的秘密信息。
 
 ## 参与开发
 
@@ -93,7 +93,7 @@ make performance  # Release 模式性能测量
 需要拍摄界面或调试样式时，可使用不读取真实历史、不监听剪贴板的演示模式：
 
 ```bash
-"build/Cliplet Dev.app/Contents/MacOS/ClipboardNative" --ui-preview --light
+"build/Cliplet Dev.app/Contents/MacOS/Cliplet" --ui-preview --light
 # 设置窗口：再添加 --settings-preview
 ```
 

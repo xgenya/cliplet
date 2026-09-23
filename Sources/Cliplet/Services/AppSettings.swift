@@ -5,8 +5,8 @@ import ServiceManagement
 final class AppSettings: ObservableObject {
     static let shared: AppSettings = {
         if UIPreview.enabled {
-            let defaults = UserDefaults(suiteName: "ClipboardNative.UIPreview")!
-            defaults.removePersistentDomain(forName: "ClipboardNative.UIPreview")
+            let defaults = UserDefaults(suiteName: "Cliplet.UIPreview")!
+            defaults.removePersistentDomain(forName: "Cliplet.UIPreview")
             defaults.set("zh-Hans", forKey: "appLanguage")
             return AppSettings(defaults: defaults)
         }

@@ -14,8 +14,8 @@ if [[ -n "${SIGNING_KEYCHAIN:-}" ]]; then NOTARY_OPTIONS+=(--keychain "$SIGNING_
 make check
 ./scripts/build-app.sh release
 python3 scripts/smoke-app.py build/Cliplet.app
-python3 scripts/check-binary.py build/Cliplet.app/Contents/MacOS/ClipboardNative build/symbols/ClipboardNative.dSYM
-ARCHITECTURES="$(lipo -archs build/Cliplet.app/Contents/MacOS/ClipboardNative)"
+python3 scripts/check-binary.py build/Cliplet.app/Contents/MacOS/Cliplet build/symbols/Cliplet.dSYM
+ARCHITECTURES="$(lipo -archs build/Cliplet.app/Contents/MacOS/Cliplet)"
 [[ "$ARCHITECTURES" == arm64 ]] || { print -u2 'Release must contain only arm64'; exit 1; }
 OUTPUT_DIR="$ROOT_DIR/build/releases/$VERSION"
 [[ ! -e "$OUTPUT_DIR" ]] || { print -u2 'Release output already exists; preserve or move it first'; exit 2; }
@@ -28,15 +28,15 @@ xcrun stapler validate build/Cliplet.app
 spctl --assess --type execute --verbose build/Cliplet.app
 rm "$ARCHIVE"
 ditto -c -k --sequesterRsrc --keepParent build/Cliplet.app "$ARCHIVE"
-ditto -c -k --keepParent build/symbols/ClipboardNative.dSYM "$OUTPUT_DIR/Cliplet-$VERSION.dSYM.zip"
+ditto -c -k --keepParent build/symbols/Cliplet.dSYM "$OUTPUT_DIR/Cliplet-$VERSION.dSYM.zip"
 {
     print "version=$VERSION"
     print "build=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' build/Cliplet.app/Contents/Info.plist)"
     print "commit=$(git rev-parse HEAD)"
     print "architectures=$ARCHITECTURES"
     xcodebuild -version
-    xcrun dwarfdump --uuid build/Cliplet.app/Contents/MacOS/ClipboardNative
-    xcrun dwarfdump --uuid build/symbols/ClipboardNative.dSYM
+    xcrun dwarfdump --uuid build/Cliplet.app/Contents/MacOS/Cliplet
+    xcrun dwarfdump --uuid build/symbols/Cliplet.dSYM
 } > "$OUTPUT_DIR/build-info.txt"
 (cd "$OUTPUT_DIR" && shasum -a 256 ./*.zip > SHA256SUMS)
 print "Signed, notarized release artifacts: $OUTPUT_DIR"

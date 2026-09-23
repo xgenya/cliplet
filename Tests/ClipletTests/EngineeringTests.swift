@@ -2,7 +2,7 @@ import Darwin
 import AppKit
 import Foundation
 import XCTest
-@testable import ClipboardNative
+@testable import Cliplet
 
 final class EngineeringTests: XCTestCase {
     func testInstanceLockPreventsDuplicatesAndReleasesOnExit() throws {
@@ -40,7 +40,8 @@ final class EngineeringTests: XCTestCase {
         XCTAssertNotEqual(AppEnvironment.development.bundleIdentifier, AppEnvironment.production.bundleIdentifier)
         XCTAssertNotEqual(AppEnvironment.development.dataDirectoryName, AppEnvironment.production.dataDirectoryName)
         XCTAssertEqual(AppEnvironment.production.bundleIdentifier, "com.clipboardnative.macos")
-        XCTAssertEqual(AppEnvironment.production.dataDirectoryName, "ClipboardNative")
+        XCTAssertEqual(AppEnvironment.production.dataDirectoryName, "Cliplet")
+        XCTAssertEqual(AppEnvironment.production.legacyDataDirectoryName, "ClipboardNative")
         #if DEBUG
             XCTAssertEqual(AppEnvironment.current, .development)
         #else
@@ -89,7 +90,7 @@ final class EngineeringTests: XCTestCase {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
             process.arguments = [
-                "xctest", "-XCTest", "ClipboardNativeTests.EngineeringTests/testCrashWriterChild",
+                "xctest", "-XCTest", "ClipletTests.EngineeringTests/testCrashWriterChild",
                 Bundle(for: Self.self).bundlePath,
             ]
             var environment = ProcessInfo.processInfo.environment

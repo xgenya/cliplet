@@ -1,5 +1,5 @@
 import XCTest
-@testable import ClipboardNative
+@testable import Cliplet
 
 final class HistoryRepositoryTests: XCTestCase {
     private var directory: URL!
@@ -11,6 +11,37 @@ final class HistoryRepositoryTests: XCTestCase {
     }
 
     override func tearDownWithError() throws { try FileManager.default.removeItem(at: directory) }
+
+    func testLegacyHistoryDirectoryMovesToClipletWithoutLosingPayloads() throws {
+        let legacy = directory.appendingPathComponent(AppEnvironment.production.legacyDataDirectoryName)
+        let payloads = legacy.appendingPathComponent("Payloads")
+        try FileManager.default.createDirectory(at: payloads, withIntermediateDirectories: true)
+        let metadata = Data("existing history".utf8)
+        let attachment = Data([1, 2, 3])
+        try metadata.write(to: legacy.appendingPathComponent("history.json"))
+        try attachment.write(to: payloads.appendingPathComponent("image.payload"))
+
+        let migrated = HistoryRepository.directory(in: directory, environment: .production)
+        XCTAssertEqual(migrated.lastPathComponent, "Cliplet")
+        XCTAssertEqual(try Data(contentsOf: migrated.appendingPathComponent("history.json")), metadata)
+        XCTAssertEqual(try Data(contentsOf: migrated.appendingPathComponent("Payloads/image.payload")), attachment)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: legacy.path))
+    }
+
+    func testExistingDestinationDoesNotOverwriteLegacyHistory() throws {
+        let legacy = directory.appendingPathComponent(
+            AppEnvironment.production.legacyDataDirectoryName, isDirectory: true)
+        let destination = directory.appendingPathComponent(
+            AppEnvironment.production.dataDirectoryName, isDirectory: true)
+        try FileManager.default.createDirectory(at: legacy, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        try Data("legacy".utf8).write(to: legacy.appendingPathComponent("history.json"))
+
+        XCTAssertEqual(HistoryRepository.directory(in: directory, environment: .production), legacy)
+        try Data("new".utf8).write(to: destination.appendingPathComponent("history.json"))
+        XCTAssertEqual(HistoryRepository.directory(in: directory, environment: .production), destination)
+        XCTAssertEqual(try Data(contentsOf: legacy.appendingPathComponent("history.json")), Data("legacy".utf8))
+    }
 
     func testFlushCommitsLatestSnapshotWithoutWaitingForDebounce() throws {
         let repository = HistoryRepository(directory: directory, debounce: 60)

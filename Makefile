@@ -1,4 +1,4 @@
-SWIFT_ENV = env CLANG_MODULE_CACHE_PATH=/tmp/clipboard-native-clang-cache SWIFTPM_MODULECACHE_OVERRIDE=/tmp/clipboard-native-swiftpm-cache
+SWIFT_ENV = env CLANG_MODULE_CACHE_PATH=/tmp/cliplet-clang-cache SWIFTPM_MODULECACHE_OVERRIDE=/tmp/cliplet-swiftpm-cache
 MACOS_SDK_PATH := $(shell xcrun --sdk macosx --show-sdk-path)
 MACOS_SDK_VERSION := $(shell xcrun --sdk macosx --show-sdk-version)
 # Record the SDK actually used, separately from the macOS 14 deployment target.
@@ -19,7 +19,7 @@ dev-app:
 	./scripts/build-app.sh debug
 
 run:
-	$(SWIFT_ENV) swift run $(SWIFT_FLAGS) ClipboardNative
+	$(SWIFT_ENV) swift run $(SWIFT_FLAGS) Cliplet
 
 format:
 	xcrun swift-format format --configuration .swift-format --in-place --recursive Package.swift Sources Tests

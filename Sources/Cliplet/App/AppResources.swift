@@ -5,7 +5,7 @@ import Foundation
 enum AppResources {
     static var packagedBundle: Bundle? {
         guard let directory = Bundle.main.resourceURL else { return nil }
-        return Bundle(url: directory.appendingPathComponent("ClipboardNative_ClipboardNative.bundle"))
+        return Bundle(url: directory.appendingPathComponent("Cliplet_Cliplet.bundle"))
     }
     static let bundle: Bundle = packagedBundle ?? .module
 }
