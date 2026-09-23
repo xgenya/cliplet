@@ -26,7 +26,7 @@ final class EngineeringTests: XCTestCase {
     }
 
     @MainActor
-    func testReopenRequestArrivingDuringLaunchIsDeliveredWhenReady() {
+    func testReopenRequestArrivingDuringLaunchIsDeliveredWhenReady() async {
         let requests = AppReopenRequests()
         var delivered = 0
         requests.receive()
@@ -54,7 +54,7 @@ final class EngineeringTests: XCTestCase {
     }
 
     @MainActor
-    func testReplacementDuringLaunchWaitsForQuitHandler() {
+    func testReplacementDuringLaunchWaitsForQuitHandler() async {
         let requests = AppReopenRequests()
         var quits = 0
         requests.receiveReplacement()
