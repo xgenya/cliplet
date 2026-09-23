@@ -36,6 +36,7 @@ Payloads/
 /docs/
 *.md
 !/README.md
+!/README.en.md
 
 # Local history backup and unpublished design originals
 /.local-backups/

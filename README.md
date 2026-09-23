@@ -2,9 +2,11 @@
   <img src="Sources/Cliplet/Resources/AppIcon.png" width="96" alt="Cliplet 图标">
 </p>
 
-<h1 align="center">Cliplet · 拾片</h1>
+<h1 align="center">Cliplet · 拾片 — macOS 剪贴板管理器</h1>
 
-<p align="center">开源的 macOS 原生剪贴板管理器。<br>保存复制历史，快速搜索，在需要时再次粘贴。</p>
+<p align="center">简体中文 · <a href="README.en.md">English</a></p>
+
+<p align="center">轻量、开源的 Mac 剪贴板历史工具 · Native macOS Clipboard Manager<br>保存复制历史，快速搜索，在需要时再次粘贴。</p>
 
 <p align="center">
   <a href="https://github.com/xgenya/cliplet/actions/workflows/ci.yml"><img src="https://github.com/xgenya/cliplet/actions/workflows/ci.yml/badge.svg" alt="macOS CI"></a>
@@ -14,6 +16,7 @@
 </p>
 
 <p align="center">
+  <a href="#为什么做-cliplet">项目缘起</a> ·
   <a href="#设计理念">设计理念</a> ·
   <a href="#安装">安装</a> ·
   <a href="#使用">使用</a> ·
@@ -22,9 +25,19 @@
   <a href="CHANGELOG.md">更新记录</a>
 </p>
 
-Cliplet 使用 SwiftUI 和 AppKit 构建，常驻菜单栏。按下 **⌥V** 即可查看复制过的文本、链接、图片和文件，搜索后直接粘贴到当前应用。无需账号，历史记录保存在本机。
+Cliplet（拾片）是一款免费开源的 **macOS 剪贴板管理器（clipboard manager）**，用于保存和搜索**剪贴板历史（clipboard history）**，也就是常说的“Mac 剪切板工具”或“复制粘贴历史工具”。使用 SwiftUI 和 AppKit 构建，常驻菜单栏。按下 **⌥V** 即可查看复制过的文本、链接、图片和文件，搜索后直接粘贴到当前应用。无需账号，历史记录保存在本机。
+
+**专注剪贴板，无第三方依赖，体积小巧。** 从记录、搜索到再次粘贴，功能围绕复制内容的复用展开。应用使用 macOS 系统框架，无需额外安装运行时或后台服务。
 
 ![Cliplet 剪贴板历史窗口](assets/screenshots/history.png)
+
+## 为什么做 Cliplet？
+
+这个项目源于一个简单的需求：**喜欢 Raycast 的剪贴板功能，但只想用剪贴板。**
+
+Cliplet 参考了 Raycast Clipboard History 的使用体验，将快捷键呼出、搜索历史、预览和再次粘贴这些操作放进一个独立、轻量的 macOS 应用。如果你正在寻找 **Raycast 剪贴板功能的开源替代工具**，希望只安装一个专注复制粘贴历史的应用，这正是 Cliplet 的出发点。
+
+Cliplet 是独立项目，与 Raycast 无隶属关系。这里的参考指使用体验；项目使用 Swift 和 Apple 原生框架实现。
 
 ## 功能
 
@@ -53,6 +66,8 @@ Cliplet 使用 SwiftUI 和 AppKit 构建，常驻菜单栏。按下 **⌥V** 即
 
 “拾片”意为拾回复制过的片段。Cliplet 希望让这些临时内容成为随时可取用的工作素材，让查找与复用自然地接在复制之后。
 
+- **专注剪贴板**：围绕记录、查找、整理和复用复制内容完善体验，让每个功能都服务于这条简单的工作流。
+- **轻量且无第三方依赖**：使用 Swift 与系统框架实现界面、存储和图片识别，没有第三方 Swift 包依赖，也不打包浏览器运行时。本地 Release 应用包的磁盘占用约为 **5.5 MiB**（`du -sh build/Cliplet.app` 实测；仅指应用本身，不含历史数据，大小随构建变化）。
 - **减少打断**：平时常驻菜单栏，需要时通过快捷键呼出；搜索、选择、粘贴围绕一个紧凑的浮动窗口完成，尽快回到原来的工作。
 - **内容优先**：以内容摘要和预览帮助辨认条目，用来源、类型和时间补充上下文。视觉层级服务于查找，常用操作可直接通过键盘完成。
 - **融入 macOS**：使用 SwiftUI、AppKit 和系统原生控件，遵循熟悉的窗口、菜单与快捷键习惯，让外观随系统演进。
