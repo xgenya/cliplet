@@ -4,6 +4,7 @@ import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    var reopenRequests: AppReopenRequests?
     private let settings = AppSettings.shared
     private lazy var store = ClipboardStore(
         settings: settings,
@@ -79,6 +80,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.handle(event) == true ? nil : event
         }
+        reopenRequests?.onRequest = { [weak self] in self?.showPanel() }
         if UIPreview.enabled {
             NSApp.appearance = NSAppearance(
                 named: ProcessInfo.processInfo.arguments.contains("--light") ? .aqua : .darkAqua)
@@ -105,6 +107,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         isTerminating = true
+        pasteService.cancelPendingPaste()
         monitor.stop()
         do {
             try store.flush()
@@ -123,6 +126,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        pasteService.cancelPendingPaste()
         monitor.stop()
         store.stopMaintenance()
         if let localKeyMonitor { NSEvent.removeMonitor(localKeyMonitor) }
@@ -134,8 +138,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func buildStatusItem() {
         if let statusItem { NSStatusBar.system.removeStatusItem(statusItem) }
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(
-            systemSymbolName: "clipboard", accessibilityDescription: L10n.tr("Clipboard History"))
+        item.button?.image = AppBrand.menuBarIcon
+        item.button?.imagePosition = .imageOnly
+        item.button?.toolTip = L10n.tr("Clipboard History")
         let menu = NSMenu()
         let openItem = menu.addItem(
             withTitle: L10n.tr("Open Clipboard History"), action: #selector(openFromMenu),
@@ -314,6 +319,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func copyText(_ text: String) {
+        pasteService.cancelPendingPaste()
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
         monitor.ignoreCurrentChange()

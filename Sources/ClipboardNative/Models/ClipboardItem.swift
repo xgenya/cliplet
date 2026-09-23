@@ -25,13 +25,15 @@ struct ClipboardItem: Codable, Identifiable, Hashable, Sendable {
     var contentHash: String
     var customName: String?
     var payloadReferences: [String: String]? = nil
+    // Nil is an older or newly captured image whose recognition has not finished.
+    var recognitionCompleted: Bool? = nil
     // Runtime location is injected by the repository, never trusted from JSON.
     var payloadDirectory: URL? = nil
 
     enum CodingKeys: String, CodingKey {
         case id, createdAt, lastUsedAt, kind, text, rtfData, htmlData, imageData, fileURLs
         case sourceBundleIdentifier, sourceApplicationName, isPinned, useCount, contentHash, customName
-        case payloadReferences
+        case payloadReferences, recognitionCompleted
     }
 
     var searchableText: String {

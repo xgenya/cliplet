@@ -23,6 +23,7 @@ final class ClipboardMonitor {
     private let recognizer: ImageRecognizing
     private var recognitionTasks: [UUID: Task<Void, Never>] = [:]
     private var itemsSubscription: AnyCancellable?
+    private var pauseSubscription: AnyCancellable?
     private let logger = Logger(subsystem: "com.clipboardnative.macos", category: "recognition")
     private var timer: Timer?
     private var lastChangeCount: Int
@@ -47,6 +48,11 @@ final class ClipboardMonitor {
                 self.recognitionTasks.removeValue(forKey: id)?.cancel()
             }
         }
+        pauseSubscription = settings.$isPaused.dropFirst().sink { [weak self] paused in
+            if !paused {
+                Task { @MainActor in self?.resumeIncompleteRecognition() }
+            }
+        }
     }
 
     func start() {
@@ -55,10 +61,12 @@ final class ClipboardMonitor {
             Task { @MainActor in self?.poll() }
         }
         RunLoop.main.add(timer!, forMode: .common)
+        resumeIncompleteRecognition()
     }
 
     func stop() {
         timer?.invalidate()
+        timer = nil
         recognitionTasks.values.forEach { $0.cancel() }
         recognitionTasks.removeAll()
     }
@@ -119,7 +127,9 @@ final class ClipboardMonitor {
     }
 
     private func recognize(_ data: Data, id: UUID, hash: String, sourceBundleID: String?) {
-        guard recognitionTasks[id] == nil, store.items.contains(where: { $0.id == id }) else { return }
+        guard recognitionTasks[id] == nil,
+            store.items.contains(where: { $0.id == id && $0.recognitionCompleted != true && $0.text == nil })
+        else { return }
         let recognizer = recognizer
         recognitionTasks[id] = Task { [weak self] in
             do {
@@ -135,6 +145,23 @@ final class ClipboardMonitor {
                 guard !Task.isCancelled, let self else { return }
                 self.recognitionTasks[id] = nil
                 self.logger.error("Image recognition failed; the captured image remains available.")
+            }
+        }
+    }
+
+    private func resumeIncompleteRecognition() {
+        guard timer != nil, !settings.isPaused else { return }
+        for item in store.items
+        where item.kind == .image && item.text == nil
+            && item.recognitionCompleted != true
+            && !settings.excludedBundleIDs.contains(item.sourceBundleIdentifier ?? "")
+        {
+            do {
+                if let data = try item.payloadData(for: "image") {
+                    recognize(data, id: item.id, hash: item.contentHash, sourceBundleID: item.sourceBundleIdentifier)
+                }
+            } catch {
+                logger.error("Could not load an image for resumed recognition.")
             }
         }
     }

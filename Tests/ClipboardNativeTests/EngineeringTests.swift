@@ -1,9 +1,41 @@
 import Darwin
+import AppKit
 import Foundation
 import XCTest
 @testable import ClipboardNative
 
 final class EngineeringTests: XCTestCase {
+    func testInstanceLockPreventsDuplicatesAndReleasesOnExit() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("Cliplet-lock-test-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: url) }
+        do {
+            let first = try XCTUnwrap(AppInstanceLock.acquire(at: url))
+            try withExtendedLifetime(first) {
+                XCTAssertNil(try AppInstanceLock.acquire(at: url))
+            }
+        }
+        let next = try XCTUnwrap(AppInstanceLock.acquire(at: url))
+        withExtendedLifetime(next) {}
+    }
+
+    @MainActor
+    func testMenuBarIconIsAnAlwaysAvailableTemplateImage() {
+        XCTAssertEqual(AppBrand.menuBarIcon.size, NSSize(width: 18, height: 18))
+        XCTAssertTrue(AppBrand.menuBarIcon.isTemplate)
+        XCTAssertNotNil(AppBrand.menuBarIcon.tiffRepresentation)
+    }
+
+    @MainActor
+    func testReopenRequestArrivingDuringLaunchIsDeliveredWhenReady() {
+        let requests = AppReopenRequests()
+        var delivered = 0
+        requests.receive()
+        requests.onRequest = { delivered += 1 }
+        XCTAssertEqual(delivered, 1)
+        requests.receive()
+        XCTAssertEqual(delivered, 2)
+    }
+
     func testDevelopmentAndProductionIdentitiesAreDistinct() {
         XCTAssertNotEqual(AppEnvironment.development.bundleIdentifier, AppEnvironment.production.bundleIdentifier)
         XCTAssertNotEqual(AppEnvironment.development.dataDirectoryName, AppEnvironment.production.dataDirectoryName)

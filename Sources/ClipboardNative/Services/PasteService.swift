@@ -1,6 +1,7 @@
 import AppKit
 @preconcurrency import ApplicationServices
 import Foundation
+import Combine
 
 @MainActor
 final class PasteService {
@@ -12,18 +13,36 @@ final class PasteService {
         self.settings = settings
         self.pasteboard = pasteboard
     }
-    private struct PendingPaste {
-        let item: ClipboardItem
+    private struct PasteRequest {
+        let id: UUID
         let application: NSRunningApplication
+        let clipboardChangeCount: Int
         let completion: (Bool) -> Void
     }
 
-    private var pendingPaste: PendingPaste?
+    private var activeRequest: PasteRequest?
     private var permissionTimer: Timer?
     private var permissionDeadline: Date?
     private var hasRequestedAccessibilityPermission = false
+    private var automaticPasteSubscription: AnyCancellable?
+
+    private func observeSettings() {
+        guard automaticPasteSubscription == nil else { return }
+        automaticPasteSubscription = settings.$pasteAutomatically.sink { [weak self] enabled in
+            if !enabled { self?.cancelPendingPaste() }
+        }
+    }
+
+    func cancelPendingPaste() {
+        let request = activeRequest
+        activeRequest = nil
+        stopPermissionTimer()
+        hasRequestedAccessibilityPermission = false
+        request?.completion(false)
+    }
 
     func write(_ item: ClipboardItem, plainText: Bool = false) -> Bool {
+        cancelPendingPaste()
         // Read all required payloads before altering the user's clipboard.
         let usePlainText = plainText && item.text != nil
         let imageData: Data?
@@ -53,17 +72,19 @@ final class PasteService {
     }
 
     func paste(_ item: ClipboardItem, into application: NSRunningApplication?, completion: @escaping (Bool) -> Void) {
+        observeSettings()
         guard write(item, plainText: settings.preferPlainText) else { completion(false); return }
         guard settings.pasteAutomatically, let application else { completion(true); return }
+        let request = PasteRequest(
+            id: UUID(), application: application, clipboardChangeCount: pasteboard.changeCount, completion: completion)
+        activeRequest = request
         guard AXIsProcessTrusted() else {
-            pendingPaste?.completion(false)
-            pendingPaste = PendingPaste(item: item, application: application, completion: completion)
             requestAccessibilityPermissionOnce()
             waitForAccessibilityPermission()
             return
         }
 
-        performPaste(into: application, completion: completion)
+        performPaste(request)
     }
 
     private func requestAccessibilityPermissionOnce() {
@@ -84,23 +105,17 @@ final class PasteService {
     }
 
     private func checkAccessibilityPermission() {
-        guard let pendingPaste else {
+        guard let request = activeRequest else {
             stopPermissionTimer()
             return
         }
+        guard isRequestValid(request) else { cancelPendingPaste(); return }
         if AXIsProcessTrusted() {
-            self.pendingPaste = nil
             hasRequestedAccessibilityPermission = false
             stopPermissionTimer()
-            guard write(pendingPaste.item, plainText: settings.preferPlainText) else {
-                pendingPaste.completion(false)
-                return
-            }
-            performPaste(into: pendingPaste.application, completion: pendingPaste.completion)
+            performPaste(request)
         } else if permissionDeadline.map({ Date() >= $0 }) == true {
-            self.pendingPaste = nil
-            stopPermissionTimer()
-            pendingPaste.completion(false)
+            cancelPendingPaste()
         }
     }
 
@@ -110,36 +125,51 @@ final class PasteService {
         permissionDeadline = nil
     }
 
-    private func performPaste(into application: NSRunningApplication, completion: @escaping (Bool) -> Void) {
-        guard !application.isTerminated else { completion(false); return }
-        application.activate()
-        deliverPaste(into: application, attempt: 0, completion: completion)
+    private func isRequestValid(_ request: PasteRequest) -> Bool {
+        activeRequest?.id == request.id && settings.pasteAutomatically
+            && pasteboard.changeCount == request.clipboardChangeCount && !request.application.isTerminated
     }
 
-    private func deliverPaste(
-        into application: NSRunningApplication, attempt: Int, completion: @escaping (Bool) -> Void
-    ) {
-        guard !application.isTerminated else { completion(false); return }
-        let isFrontmost = NSWorkspace.shared.frontmostApplication?.processIdentifier == application.processIdentifier
+    private func finish(_ request: PasteRequest, succeeded: Bool) {
+        guard activeRequest?.id == request.id else { return }
+        activeRequest = nil
+        stopPermissionTimer()
+        request.completion(succeeded)
+    }
+
+    private func performPaste(_ request: PasteRequest) {
+        guard isRequestValid(request) else { finish(request, succeeded: false); return }
+        request.application.activate()
+        deliverPaste(request, attempt: 0)
+    }
+
+    private func deliverPaste(_ request: PasteRequest, attempt: Int) {
+        guard isRequestValid(request) else { finish(request, succeeded: false); return }
+        let isFrontmost =
+            NSWorkspace.shared.frontmostApplication?.processIdentifier == request.application.processIdentifier
         if !isFrontmost {
-            guard attempt < 12 else { completion(false); return }
-            application.activate()
+            guard attempt < 12 else { finish(request, succeeded: false); return }
+            request.application.activate()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
-                self?.deliverPaste(into: application, attempt: attempt + 1, completion: completion)
+                self?.deliverPaste(request, attempt: attempt + 1)
             }
             return
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
+            guard let self else { return }
+            guard self.isRequestValid(request), AXIsProcessTrusted(),
+                NSWorkspace.shared.frontmostApplication?.processIdentifier == request.application.processIdentifier
+            else { self.finish(request, succeeded: false); return }
             let source = CGEventSource(stateID: .hidSystemState)
             let down = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: true)
             let up = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: false)
-            guard let down, let up else { completion(false); return }
+            guard let down, let up else { self.finish(request, succeeded: false); return }
             down.flags = .maskCommand
             up.flags = .maskCommand
             down.post(tap: .cghidEventTap)
             up.post(tap: .cghidEventTap)
-            completion(true)
+            self.finish(request, succeeded: true)
         }
     }
 

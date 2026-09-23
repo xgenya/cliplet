@@ -49,7 +49,10 @@ final class ClipboardStore: ObservableObject {
             item.useCount = existing.useCount
             item.lastUsedAt = existing.lastUsedAt
             // Preserve completed OCR when the same image is captured again.
-            if item.kind == .image, item.text == nil { item.text = existing.text }
+            if item.kind == .image, item.text == nil {
+                item.text = existing.text
+                item.recognitionCompleted = existing.recognitionCompleted
+            }
         }
         updated.append(item)
         items = updated
@@ -99,10 +102,10 @@ final class ClipboardStore: ObservableObject {
     }
 
     func updateRecognizedText(_ text: String?, id: UUID, contentHash: String) {
-        guard let text, let index = items.firstIndex(where: { $0.id == id && $0.contentHash == contentHash }),
-            items[index].text != text
-        else { return }
+        guard let index = items.firstIndex(where: { $0.id == id && $0.contentHash == contentHash }) else { return }
+        guard items[index].recognitionCompleted != true || items[index].text != text else { return }
         items[index].text = text
+        items[index].recognitionCompleted = true
         scheduleSave()
     }
 

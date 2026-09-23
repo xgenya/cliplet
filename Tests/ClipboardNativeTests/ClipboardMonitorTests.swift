@@ -18,6 +18,19 @@ private actor SuspendedRecognizer: ImageRecognizing {
     }
 }
 
+private actor RestartableRecognizer: ImageRecognizing {
+    private var continuations: [CheckedContinuation<String?, Never>] = []
+    var startedCount: Int { continuations.count }
+
+    func recognize(_ data: Data) async throws -> String? {
+        await withCheckedContinuation { continuations.append($0) }
+    }
+
+    func finish(_ index: Int, with text: String?) {
+        continuations[index].resume(returning: text)
+    }
+}
+
 // Use async entry points for services with isolated deinit on the CI runtime.
 // https://github.com/swiftlang/swift/issues/85663
 final class ClipboardMonitorTests: XCTestCase {
@@ -112,5 +125,70 @@ final class ClipboardMonitorTests: XCTestCase {
         item.payloadReferences = ["rtf": "invalid-reference"]
         XCTAssertFalse(PasteService(settings: settings, pasteboard: pasteboard).write(item))
         XCTAssertEqual(pasteboard.string(forType: .string), "keep this")
+    }
+
+    @MainActor
+    func testStoppedRecognitionRestartsAndCancelledResultCannotOverwriteIt() async throws {
+        let (settings, cleanup) = isolatedSettings()
+        defer { cleanup() }
+        let store = ClipboardStore(settings: settings, repository: MemoryHistoryRepository(), maintenanceInterval: nil)
+        let pasteboard = MemoryClipboard()
+        let recognizer = RestartableRecognizer()
+        let monitor = ClipboardMonitor(
+            store: store, settings: settings, pasteboard: pasteboard,
+            source: { ClipboardSource(bundleIdentifier: "test.source", name: "Test") }, recognizer: recognizer)
+        defer { monitor.stop() }
+        pasteboard.setData(fixtureImage(), forType: .png)
+        monitor.poll()
+        let id = try XCTUnwrap(store.items.first?.id)
+        for _ in 0..<200 where await recognizer.startedCount < 1 {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        let firstCount = await recognizer.startedCount
+        XCTAssertEqual(firstCount, 1)
+
+        monitor.stop()
+        monitor.start()
+        for _ in 0..<200 where await recognizer.startedCount < 2 {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        let restartedCount = await recognizer.startedCount
+        XCTAssertEqual(restartedCount, 2)
+        await recognizer.finish(0, with: "stale result")
+        XCTAssertNil(store.items.first?.text)
+        await recognizer.finish(1, with: "resumed result")
+        try await waitUntil { store.items.first?.text == "resumed result" }
+        XCTAssertEqual(store.items.first?.id, id)
+        XCTAssertEqual(store.items.first?.recognitionCompleted, true)
+    }
+
+    @MainActor
+    func testStartupResumesOnlyIncompleteImageRecognition() async throws {
+        let (settings, cleanup) = isolatedSettings()
+        defer { cleanup() }
+        let pending = fixtureItem(image: fixtureImage())
+        var completed = fixtureItem(image: Data([1, 2, 3]))
+        completed.recognitionCompleted = true
+        let restored = try JSONDecoder().decode(
+            [ClipboardItem].self, from: JSONEncoder().encode([pending, completed]))
+        let repository = MemoryHistoryRepository(items: restored)
+        let store = ClipboardStore(settings: settings, repository: repository, maintenanceInterval: nil)
+        let recognizer = RestartableRecognizer()
+        let monitor = ClipboardMonitor(
+            store: store, settings: settings, pasteboard: MemoryClipboard(), recognizer: recognizer)
+        defer { monitor.stop() }
+        monitor.start()
+        for _ in 0..<200 where await recognizer.startedCount < 1 {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        let initialCount = await recognizer.startedCount
+        XCTAssertEqual(initialCount, 1)
+        await recognizer.finish(0, with: nil)
+        try await waitUntil { store.items.first(where: { $0.id == pending.id })?.recognitionCompleted == true }
+        XCTAssertNil(store.items.first(where: { $0.id == pending.id })?.text)
+        monitor.stop()
+        monitor.start()
+        let finalCount = await recognizer.startedCount
+        XCTAssertEqual(finalCount, 1)
     }
 }
