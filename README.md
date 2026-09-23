@@ -4,64 +4,109 @@
 
 <h1 align="center">Cliplet · 拾片</h1>
 
-<p align="center">复制过，就找得到。<br>A native, local-first clipboard manager for macOS.</p>
+<p align="center">开源的 macOS 原生剪贴板管理器。<br>保存复制历史，快速搜索，在需要时再次粘贴。</p>
 
 <p align="center">
   <a href="https://github.com/xgenya/cliplet/actions/workflows/ci.yml"><img src="https://github.com/xgenya/cliplet/actions/workflows/ci.yml/badge.svg" alt="macOS CI"></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-111111?logo=apple" alt="macOS 14+">
-  <img src="https://img.shields.io/badge/Apple_Silicon-arm64-111111?logo=apple" alt="Apple Silicon only">
-  <img src="https://img.shields.io/badge/Swift-6.2%2B-F05138?logo=swift&logoColor=white" alt="Swift 6.2+">
+  <img src="https://img.shields.io/badge/Apple_Silicon-arm64-111111?logo=apple" alt="Apple Silicon">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-00897B" alt="MIT License"></a>
 </p>
 
-![Cliplet 宣传图](assets/social/cliplet-banner.png)
+<p align="center">
+  <a href="#设计理念">设计理念</a> ·
+  <a href="#安装">安装</a> ·
+  <a href="#使用">使用</a> ·
+  <a href="#开发">开发</a> ·
+  <a href="CONTRIBUTING.md">参与贡献</a> ·
+  <a href="CHANGELOG.md">更新记录</a>
+</p>
 
-按下 **⌥V**，找回刚才复制的文字、链接、图片或文件。搜索、预览、置顶，再粘贴到正在工作的应用。Cliplet 使用 SwiftUI 与 AppKit 构建，常驻菜单栏，不需要注册账号。
+Cliplet 使用 SwiftUI 和 AppKit 构建，常驻菜单栏。按下 **⌥V** 即可查看复制过的文本、链接、图片和文件，搜索后直接粘贴到当前应用。无需账号，历史记录保存在本机。
+
+![Cliplet 剪贴板历史窗口](assets/screenshots/history.png)
 
 ## 功能
 
-- **随手找回** — 自动记录、内容去重、按时间分组，支持全文搜索和类型筛选。
-- **不止文字** — 文本、链接、邮箱、颜色、图片、文件，以及 RTF / HTML 富文本。
-- **看清再粘贴** — 图片预览、文件图标叠放、来源应用和详细信息。
-- **键盘优先** — 全局快捷键、方向键导航和快捷操作面板，常用内容可以置顶、重命名。
-- **本机识别** — 使用 Apple Vision 识别图片中的文字与二维码，识别结果可搜索、可复制。
-- **原生外观** — 浅色与深色、中文与英文；macOS 26+ 使用 Liquid Glass，较旧系统保留原生材质回退。
-- **由你控制** — 暂停记录、排除应用、保留期限、数量上限与登录启动。
+- **剪贴板历史**：记录文本、链接、邮箱、颜色、图片、文件及 RTF / HTML 富文本，自动去重并按时间分组。
+- **搜索与整理**：搜索内容、按类型筛选，为常用条目置顶或重命名。
+- **内容预览**：查看图片、文件预览、来源应用和条目详情。
+- **键盘操作**：通过全局快捷键打开历史，使用方向键选择条目，通过操作面板执行更多操作。
+- **图片识别**：使用 Apple Vision 在本机识别图片中的文字和二维码，支持搜索和复制识别结果。
+- **记录控制**：暂停记录、排除指定应用，设置保留期限、数量上限和登录启动。
+- **原生界面**：支持中文、英文及浅色、深色外观；macOS 26+ 使用 Liquid Glass，较旧系统使用原生材质回退。
 
-## 界面
+<details>
+<summary>更多截图</summary>
 
-以下截图来自应用的隔离演示模式，使用合成数据。玻璃材质会随系统版本、外观和桌面背景变化。
-
-| 剪贴板历史 | 文件叠放预览 |
+| 文件预览 | 快捷操作 |
 | :---: | :---: |
-| ![剪贴板历史](assets/screenshots/history.png) | ![多文件叠放预览](assets/screenshots/files.png) |
-| 快捷操作 | 原生设置 |
-| ![快捷操作面板](assets/screenshots/actions.png) | ![设置窗口](assets/screenshots/settings.png) |
+| ![多文件预览](assets/screenshots/files.png) | ![快捷操作面板](assets/screenshots/actions.png) |
 
-## 安装与构建
+![Cliplet 设置窗口](assets/screenshots/settings.png)
 
-**仅支持 Apple Silicon Mac（M1 及更新机型），不支持 Intel Mac。** 运行需要 **macOS 14 或更新版本**。
+</details>
 
-当前提供源码构建。构建需要 **Xcode 26+（Swift 6.2+）** 和命令行工具，无第三方 Swift 包依赖。
+截图使用隔离演示模式中的合成数据。界面材质会随 macOS 版本、系统外观和桌面背景变化。
+
+## 设计理念
+
+“拾片”意为拾回复制过的片段。Cliplet 希望让这些临时内容成为随时可取用的工作素材，让查找与复用自然地接在复制之后。
+
+- **减少打断**：平时常驻菜单栏，需要时通过快捷键呼出；搜索、选择、粘贴围绕一个紧凑的浮动窗口完成，尽快回到原来的工作。
+- **内容优先**：以内容摘要和预览帮助辨认条目，用来源、类型和时间补充上下文。视觉层级服务于查找，常用操作可直接通过键盘完成。
+- **融入 macOS**：使用 SwiftUI、AppKit 和系统原生控件，遵循熟悉的窗口、菜单与快捷键习惯，让外观随系统演进。
+- **本地与可控**：历史存储和图片识别在本机完成；记录范围、保留期限和暂停状态由用户控制。保持功能集中，也让实现便于理解和维护。
+
+### 液态玻璃 · Liquid Glass
+
+在 macOS 26 及更新版本上，Cliplet 使用系统原生 Liquid Glass 呈现历史窗口和快捷操作面板。半透明材质让浮层保留桌面与当前应用的背景关系，配合圆角、边缘与层次感，区分临时操作界面和背后的工作内容。
+
+玻璃材质主要承载窗口与操作层，文本、图片和列表内容保持清晰的阅读层级。设计上优先保证内容辨识与操作效率，并控制材质叠加，让玻璃效果与紧凑的剪贴板工作流协调。
+
+历史窗口通过 AppKit 的 `NSGlassEffectView` 实现，快捷操作面板使用 SwiftUI 的 `glassEffect`。在 macOS 14–15 上，两者回退为 `NSVisualEffectView` 原生材质，保留相同的核心功能与操作流程。实际材质表现由系统渲染，会随浅色 / 深色外观和背景变化。
+
+## 安装
+
+### 系统要求
+
+| 项目 | 要求 |
+| --- | --- |
+| 系统 | macOS 14 或更新版本 |
+| 硬件 | Apple Silicon Mac（M1 及更新机型），不支持 Intel Mac |
+| 构建工具 | Xcode 26+，包含 Swift 6.2+ 和命令行工具 |
+
+### 从源码构建
+
+项目使用 Swift Package Manager，无第三方 Swift 包依赖。在已安装上述工具的 Mac 上运行：
 
 ```bash
-git clone https://github.com/xgenya/cliplet.git Cliplet
-cd Cliplet
+git clone https://github.com/xgenya/cliplet.git
+cd cliplet
 make app
 open build/Cliplet.app
 ```
 
-生成的 arm64 应用位于 `build/Cliplet.app`，可以复制到“应用程序”目录。开发版和发行版均仅构建 Apple Silicon 版本。
+构建产物为 `build/Cliplet.app`，可将其复制到“应用程序”目录。本地构建默认使用 ad-hoc 签名，不需要 Apple Developer 证书，也不会自动进行 Apple 公证。
 
-Cliplet 常驻菜单栏。按 **⌥V** 或从菜单栏打开历史窗口，全局快捷键可以在设置中修改。自动粘贴需要辅助功能权限；未授权时仍可复制条目，再手动按 **⌘V** 粘贴。
+## 使用
 
-> 本地构建使用 ad-hoc 签名，不等同于经过 Apple 公证的发行包。
+1. 启动 Cliplet，应用会常驻菜单栏并记录后续复制的内容。
+2. 在任意应用中按 **⌥V** 打开历史窗口，也可以通过菜单栏打开。
+3. 输入关键词搜索，使用 **↑ / ↓** 选择条目，按 **↩** 粘贴。
+4. 对于常用内容，按 **⌘K** 打开操作面板，置顶或重命名条目。
 
-## 快捷键
+自动粘贴需要在「系统设置 → 隐私与安全性 → 辅助功能」中授权 Cliplet。未授权时仍可使用 **⌘↩** 将条目复制到剪贴板，再回到目标应用按 **⌘V** 手动粘贴。
+
+全局快捷键、应用排除规则和历史保留策略均可在 Cliplet 设置中调整。
+
+### 快捷键
+
+除全局快捷键外，以下操作在历史窗口中使用。
 
 | 快捷键 | 操作 |
 | --- | --- |
-| `⌥V` | 显示 / 隐藏剪贴板历史，可自定义 |
+| `⌥V` | 显示 / 隐藏历史窗口，可在设置中自定义 |
 | `↑` / `↓` | 选择条目 |
 | `↩` | 粘贴选中条目 |
 | `⌘↩` | 仅复制到剪贴板 |
@@ -73,32 +118,78 @@ Cliplet 常驻菜单栏。按 **⌥V** 或从菜单栏打开历史窗口，全�
 | `⌘P` | 切换内容类型 |
 | `Esc` | 关闭操作面板或历史窗口 |
 
-## 隐私
+## 隐私与数据
 
-历史记录保存在本机，不提供云同步，也不上传剪贴板内容。图片文字与二维码识别在设备上完成。默认排除 Apple Passwords、钥匙串访问、1Password、Bitwarden 和 LastPass，并跳过带受支持敏感类型标记的剪贴板数据；你也可以添加排除应用或暂停记录。
+Cliplet 不上传剪贴板内容，不提供云同步。图片文字与二维码识别均在设备上完成。
 
-正式版数据位于 `~/Library/Application Support/Cliplet/`，包含历史元数据和附件。升级时，应用会将旧版 `ClipboardNative/` 目录迁移到此处；如果迁移失败，会继续使用旧目录，避免丢失历史。**历史文件未单独加密**，请按需设置保留期限，避免保存敏感内容。排除规则不保证识别所有来源的秘密信息。
+默认排除 Apple Passwords、钥匙串访问、1Password、Bitwarden 和 LastPass，并跳过带受支持敏感类型标记的剪贴板数据。你可以在设置中添加排除应用，也可以随时暂停记录。排除规则无法识别所有敏感内容。
 
-## 参与开发
+正式版历史元数据和附件保存在：
 
-欢迎通过 [Issues](https://github.com/xgenya/cliplet/issues) 提交问题和建议，或发起 Pull Request。反馈界面问题时，请附上 macOS 版本、复现步骤和不含私人内容的截图。
-
-```bash
-make dev-app      # 独立的 Cliplet Dev 应用和数据目录
-make check        # 格式检查、仓库检查与回归测试
-make package-test # 打包、迁移位置与启动检查
-make performance  # Release 模式性能测量
+```text
+~/Library/Application Support/Cliplet/
 ```
 
-需要拍摄界面或调试样式时，可使用不读取真实历史、不监听剪贴板的演示模式：
+**历史文件未单独加密。** 请根据需要设置保留期限和数量上限，及时删除不应保留的内容。
+
+从旧版升级时，应用会尝试迁移 `~/Library/Application Support/ClipboardNative/` 中的数据；迁移失败时继续使用旧目录。
+
+## 开发
+
+项目以 Swift package 组织，可以用 Xcode 打开 `Package.swift`，也可以通过命令行构建。开发版使用独立的应用身份和数据目录。
+
+```bash
+make dev-app
+open "build/Cliplet Dev.app"
+```
+
+常用命令：
+
+| 命令 | 用途 |
+| --- | --- |
+| `make build` | 构建 Debug 可执行文件 |
+| `make format` | 格式化 Swift 源码 |
+| `make check` | 运行格式检查、仓库检查和回归测试 |
+| `make package-test` | 构建应用并检查打包、移动后的启动行为 |
+| `make performance` | 运行 Release 模式性能测试 |
+| `make app` | 构建并打包 Release 应用 |
+
+仅调试界面时，可使用演示模式。该模式使用合成数据，不读取真实历史，也不监听系统剪贴板：
 
 ```bash
 "build/Cliplet Dev.app/Contents/MacOS/Cliplet" --ui-preview --light
-# 设置窗口：再添加 --settings-preview
+# 预览设置窗口：追加 --settings-preview
 ```
 
-提交前请运行 `make format` 和 `make check`。CI 会构建并验证仅含 arm64 的应用，并执行 macOS 14 上的打包启动检查。
+### 项目结构
+
+```text
+Sources/Cliplet/
+├── App/          # 应用生命周期、窗口和依赖组装
+├── Domain/       # 历史保留、排序与搜索规则
+├── Models/       # 剪贴板条目模型
+├── Persistence/  # 历史与附件存储、数据迁移
+├── Services/     # 剪贴板监听、识别、快捷键与粘贴
+├── UI/           # SwiftUI 视图与展示逻辑
+└── Resources/    # 图标和本地化资源
+Tests/            # 回归与性能测试
+scripts/          # 构建、打包与检查脚本
+```
+
+CI 执行格式检查、回归测试、arm64 应用打包和性能测试，并在 macOS 14 上检查打包产物能否启动。
+
+## 参与贡献
+
+欢迎提交 Bug、功能建议、文档改进和代码贡献。
+
+- **报告问题**：通过 [Issues](https://github.com/xgenya/cliplet/issues) 提供 macOS 版本、复现步骤、预期与实际行为；截图请移除私人内容。
+- **提交代码**：阅读 [贡献指南](CONTRIBUTING.md)，提交前运行 `make format` 和 `make check`。打包或资源变更还需运行 `make package-test`。
+- **了解项目**：查看 [架构说明](docs/ARCHITECTURE.md)、[路线图](docs/ROADMAP.md) 和 [更新记录](CHANGELOG.md)。
+
+请勿在 Issue、日志、测试数据或提交记录中包含真实剪贴板内容。
 
 ## 许可证
 
-[MIT](LICENSE) © Cliplet contributors。欢迎使用、修改和分发。
+Cliplet 基于 [MIT License](LICENSE) 开源。
+
+Copyright © 2026 Cliplet contributors.
