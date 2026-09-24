@@ -32,11 +32,11 @@ Payloads/
 *.p8
 *.keychain-db
 
-# Local planning/review documents (README is the public project entry point)
-/docs/
-*.md
-!/README.md
-!/README.en.md
+# Local planning/review documents; only the documents linked from README are public
+/docs/*
+!/docs/ARCHITECTURE.md
+!/docs/PRODUCT.md
+!/docs/ROADMAP.md
 
 # Local history backup and unpublished design originals
 /.local-backups/
