@@ -155,3 +155,16 @@
 "Press Command–V to paste. To paste into the active app automatically, allow Cliplet in Accessibility settings." = "Press Command–V to paste. To paste into the active app automatically, allow Cliplet in Accessibility settings.";
 "Turn Off Automatic Paste" = "Turn Off Automatic Paste";
 "OK" = "OK";
+"Panel" = "Panel";
+"Liquid Glass" = "Liquid Glass";
+"Choose between a clearer panel and more legible content." = "Choose between a clearer panel and more legible content.";
+"Clear" = "Clear";
+"Legible" = "Legible";
+"Open Animation" = "Open Animation";
+"Reduce Motion in Accessibility settings replaces movement with a fade." = "Reduce Motion in Accessibility settings replaces movement with a fade.";
+"None" = "None";
+"Fade" = "Fade";
+"Slide Up" = "Slide Up";
+"Zoom" = "Zoom";
+"Unrestricted Adjustment" = "Unrestricted Adjustment";
+"Allows clearer and fully opaque settings. Content may be hard to read over busy backgrounds." = "Allows clearer and fully opaque settings. Content may be hard to read over busy backgrounds.";

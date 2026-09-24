@@ -260,8 +260,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if panel == nil { panel = makePanel() }
         guard let panel else { return }
         position(panel)
+        panel.setGlass(legibility: settings.panelLegibility, unrestricted: settings.panelUnrestrictedGlass)
         NSApp.activate(ignoringOtherApps: true)
-        panel.presentAnimated()
+        panel.presentAnimated(settings.panelAnimation)
         viewState.selectFirstIfNeeded()
     }
 
@@ -307,6 +308,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onSettings: { [weak self] in self?.showSettings() }
         )
         panel.installContent(root)
+        panel.onResignKey = { [weak self] in self?.closePanel() }
         return panel
     }
 

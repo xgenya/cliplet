@@ -205,8 +205,157 @@ private struct GeneralSettingsPane: View {
                 }
             }
 
+            Section(L10n.tr("Panel")) {
+                VStack(alignment: .leading, spacing: 8) {
+                    settingLabel(
+                        L10n.tr("Liquid Glass"),
+                        description: L10n.tr("Choose between a clearer panel and more legible content."))
+                    PanelGlassPreview(
+                        look: PanelGlass.look(
+                            legibility: settings.panelLegibility, unrestricted: settings.panelUnrestrictedGlass))
+                    Slider(value: $settings.panelLegibility, in: 0...1) {
+                        Text(L10n.tr("Liquid Glass"))
+                    } minimumValueLabel: {
+                        Text(L10n.tr("Clear")).font(.caption).foregroundStyle(.secondary)
+                    } maximumValueLabel: {
+                        Text(L10n.tr("Legible")).font(.caption).foregroundStyle(.secondary)
+                    }
+                    .labelsHidden()
+                }
+                Toggle(isOn: $settings.panelUnrestrictedGlass) {
+                    settingLabel(
+                        L10n.tr("Unrestricted Adjustment"),
+                        description: L10n.tr(
+                            "Allows clearer and fully opaque settings. Content may be hard to read over busy backgrounds."
+                        ))
+                }
+                .toggleStyle(.switch)
+                Picker(selection: $settings.panelAnimation) {
+                    ForEach(PanelAnimation.allCases) { animation in
+                        Text(animation.title).tag(animation)
+                    }
+                } label: {
+                    settingLabel(
+                        L10n.tr("Open Animation"),
+                        description: L10n.tr("Reduce Motion in Accessibility settings replaces movement with a fade."))
+                }
+                .pickerStyle(.menu)
+            }
         }
         .settingsFormStyle()
+    }
+}
+
+/// A miniature panel over the current wallpaper, rendered with the same glass
+/// and tint mapping as the real panel.
+private struct PanelGlassPreview: View {
+    let look: PanelGlass.Look
+    @State private var wallpaper: NSImage? = {
+        guard let screen = NSScreen.main, let url = NSWorkspace.shared.desktopImageURL(for: screen) else {
+            return nil
+        }
+        return NSImage(contentsOf: url)
+    }()
+
+    private static let panelSize = CGSize(width: 860, height: 560)
+    private let samples: [(symbol: String, title: String)] = [
+        ("text.alignleft", "Less, but better."),
+        ("link", "https://developer.apple.com/design/"),
+        ("paintpalette", "#E85D75"),
+        ("text.alignleft", "Stay curious. Keep creating."),
+        ("terminal", "swift build -c release"),
+        ("envelope", "hello@example.com"),
+    ]
+
+    var body: some View {
+        GeometryReader { proxy in
+            let scale = min(
+                (proxy.size.width - 48) / Self.panelSize.width, (proxy.size.height - 40) / Self.panelSize.height)
+            ZStack {
+                background
+                // Laid out at the real panel size, then scaled, so proportions and
+                // type weight match what the panel shows.
+                panel
+                    .frame(width: Self.panelSize.width, height: Self.panelSize.height)
+                    .scaleEffect(scale)
+                    .frame(width: Self.panelSize.width * scale, height: Self.panelSize.height * scale)
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+        }
+        .frame(height: 340)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .accessibilityHidden(true)
+    }
+
+    private var panel: some View {
+        let shape = RoundedRectangle(cornerRadius: OverlayPanel.cornerRadius, style: .continuous)
+        return VStack(spacing: 0) {
+            HStack {
+                Text(L10n.tr("Search Clipboard History")).font(.system(size: 16)).foregroundStyle(.secondary)
+                Spacer()
+                Label(L10n.tr("All Types"), systemImage: "line.3.horizontal.decrease").font(.system(size: 13))
+            }
+            .padding(.horizontal, 16)
+            .frame(height: 64)
+            Divider()
+            HStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(L10n.tr("Today")).font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary)
+                        .padding(.horizontal, 10).padding(.top, 12).padding(.bottom, 5)
+                    ForEach(samples.indices, id: \.self) { index in
+                        Label(samples[index].title, systemImage: samples[index].symbol)
+                            .font(.system(size: 13)).lineLimit(1)
+                            .padding(.horizontal, 10)
+                            .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
+                            .background(
+                                index == 0 ? Color.primary.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 7)
+                            )
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 8)
+                .frame(width: 380)
+                Divider()
+                Text(samples[0].title)
+                    .font(.system(size: 13))
+                    .padding(24)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            }
+            Divider()
+            HStack(spacing: 12) {
+                Image(systemName: "clipboard").foregroundStyle(.secondary)
+                Text(L10n.tr("Clipboard History")).foregroundStyle(.secondary)
+                Spacer()
+                Text(L10n.tr("Paste to Active App"))
+                Text(L10n.tr("Actions"))
+            }
+            .font(.system(size: 12))
+            .padding(.horizontal, 16)
+            .frame(height: 42)
+        }
+        .background(Color(nsColor: .windowBackgroundColor).opacity(look.tint))
+        .clipShape(shape)
+        .panelPreviewGlass(clear: look.clear, in: shape)
+        .shadow(color: .black.opacity(0.22), radius: 24, y: 10)
+    }
+
+    @ViewBuilder private var background: some View {
+        if let wallpaper {
+            Image(nsImage: wallpaper).resizable().aspectRatio(contentMode: .fill)
+                .frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
+        } else {
+            LinearGradient(colors: [.orange, .pink, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder func panelPreviewGlass(clear: Bool, in shape: some Shape) -> some View {
+        if #available(macOS 26.0, *) {
+            background { Color.clear.glassEffect(clear ? .clear : .regular, in: shape) }
+        } else {
+            background(.regularMaterial, in: shape)
+        }
     }
 }
 

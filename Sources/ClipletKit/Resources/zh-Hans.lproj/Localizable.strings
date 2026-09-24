@@ -155,3 +155,16 @@
 "Press Command–V to paste. To paste into the active app automatically, allow Cliplet in Accessibility settings." = "按 Command–V 即可粘贴。如需自动粘贴到当前应用，请在辅助功能设置中允许 Cliplet。";
 "Turn Off Automatic Paste" = "关闭自动粘贴";
 "OK" = "好";
+"Panel" = "面板";
+"Liquid Glass" = "液态玻璃";
+"Choose between a clearer panel and more legible content." = "在更通透的面板与更清晰的内容之间调节。";
+"Clear" = "透明";
+"Legible" = "清晰";
+"Open Animation" = "打开动画";
+"Reduce Motion in Accessibility settings replaces movement with a fade." = "开启辅助功能中的“减弱动态效果”后，位移动画会改为淡入。";
+"None" = "无";
+"Fade" = "淡入";
+"Slide Up" = "上滑";
+"Zoom" = "缩放";
+"Unrestricted Adjustment" = "自由调节";
+"Allows clearer and fully opaque settings. Content may be hard to read over busy backgrounds." = "允许调到更透明或完全不透明。背景复杂时内容可能难以阅读。";

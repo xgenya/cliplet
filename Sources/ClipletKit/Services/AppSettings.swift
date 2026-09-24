@@ -24,6 +24,9 @@ final class AppSettings: ObservableObject {
         static let hotkeyModifiers = "hotkeyModifiers"
         static let hotkeyKeyEquivalent = "hotkeyKeyEquivalent"
         static let hotkeyKeyDisplay = "hotkeyKeyDisplay"
+        static let panelLegibility = "panelLegibility"
+        static let panelUnrestrictedGlass = "panelUnrestrictedGlass"
+        static let panelAnimation = "panelAnimation"
     }
 
     @Published var language: AppLanguage {
@@ -43,6 +46,17 @@ final class AppSettings: ObservableObject {
             defaults.set(globalHotkey.keyEquivalent, forKey: Key.hotkeyKeyEquivalent)
             defaults.set(globalHotkey.keyDisplay, forKey: Key.hotkeyKeyDisplay)
         }
+    }
+    /// 0 is the standard glass panel; 1 adds the strongest legibility tint.
+    @Published var panelLegibility: Double {
+        didSet { defaults.set(panelLegibility, forKey: Key.panelLegibility) }
+    }
+    /// Extends the slider to the clear glass variant and a fully opaque tint.
+    @Published var panelUnrestrictedGlass: Bool {
+        didSet { defaults.set(panelUnrestrictedGlass, forKey: Key.panelUnrestrictedGlass) }
+    }
+    @Published var panelAnimation: PanelAnimation {
+        didSet { defaults.set(panelAnimation.rawValue, forKey: Key.panelAnimation) }
     }
     @Published private(set) var hotkeyRegistrationSucceeded = true
     @Published private(set) var launchAtLogin: Bool = SMAppService.mainApp.status == .enabled
@@ -64,6 +78,8 @@ final class AppSettings: ObservableObject {
             Key.maximumItems: 10_000,
             Key.pasteAutomatically: true,
             Key.preferPlainText: false,
+            Key.panelLegibility: 0.0,
+            Key.panelAnimation: PanelAnimation.fade.rawValue,
             Key.hotkeyKeyCode: Int(GlobalHotkey.defaultValue.keyCode),
             Key.hotkeyModifiers: Int(GlobalHotkey.defaultValue.carbonModifiers),
             Key.hotkeyKeyEquivalent: GlobalHotkey.defaultValue.keyEquivalent,
@@ -79,6 +95,9 @@ final class AppSettings: ObservableObject {
         maximumItems = defaults.integer(forKey: Key.maximumItems)
         pasteAutomatically = defaults.bool(forKey: Key.pasteAutomatically)
         preferPlainText = defaults.bool(forKey: Key.preferPlainText)
+        panelLegibility = min(max(defaults.double(forKey: Key.panelLegibility), 0), 1)
+        panelUnrestrictedGlass = defaults.bool(forKey: Key.panelUnrestrictedGlass)
+        panelAnimation = PanelAnimation(rawValue: defaults.string(forKey: Key.panelAnimation) ?? "") ?? .fade
         globalHotkey = GlobalHotkey(
             keyCode: UInt32(defaults.integer(forKey: Key.hotkeyKeyCode)),
             carbonModifiers: UInt32(defaults.integer(forKey: Key.hotkeyModifiers)),
@@ -106,5 +125,19 @@ final class AppSettings: ObservableObject {
 
     func setHotkeyRegistrationSucceeded(_ succeeded: Bool) {
         hotkeyRegistrationSucceeded = succeeded
+    }
+}
+
+enum PanelAnimation: String, CaseIterable, Identifiable {
+    case none, fade, slide, scale
+
+    var id: Self { self }
+    @MainActor var title: String {
+        switch self {
+        case .none: return L10n.tr("None")
+        case .fade: return L10n.tr("Fade")
+        case .slide: return L10n.tr("Slide Up")
+        case .scale: return L10n.tr("Zoom")
+        }
     }
 }
