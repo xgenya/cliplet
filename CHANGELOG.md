@@ -19,6 +19,8 @@
 - A missing payload file no longer blocks the whole history; only the affected content is dropped.
 - Without Accessibility permission, pasting copies immediately and explains how to paste or grant access,
   instead of waiting up to 60 seconds and pasting later.
+- The search field is focused by the first typed character instead of on open, so the system
+  input-method indicator no longer flashes over the panel.
 
 ### Fixed
 

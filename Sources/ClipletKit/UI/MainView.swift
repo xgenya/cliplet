@@ -62,10 +62,7 @@ struct MainView: View {
         }
         .frame(minWidth: OverlayMetrics.minimumWidth, minHeight: OverlayMetrics.minimumHeight)
         .environment(\.locale, L10n.locale)
-        .onAppear {
-            focusedField = .history
-            viewState.selectFirstIfNeeded()
-        }
+        .onAppear { viewState.selectFirstIfNeeded() }
         .onChange(of: viewState.showActions) { _, presented in
             focusedField = presented ? .actions : .history
         }

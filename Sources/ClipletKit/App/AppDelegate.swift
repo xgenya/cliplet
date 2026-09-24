@@ -448,7 +448,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if flags.contains(.command), event.charactersIgnoringModifiers?.lowercased() == "p" {
             viewState.cycleFilter(); return true
         }
+        // The search field is not focused on open; the first typed character focuses it
+        // and is then delivered to it, including through the input method.
+        if flags.isDisjoint(with: [.command, .control, .function]),
+            let scalar = event.characters?.unicodeScalars.first,
+            !CharacterSet.controlCharacters.contains(scalar),
+            let panel, !(panel.firstResponder is NSText),
+            let field = editableTextField(in: panel.contentView)
+        {
+            panel.makeFirstResponder(field)
+        }
         return false
+    }
+
+    private func editableTextField(in view: NSView?) -> NSTextField? {
+        guard let view else { return nil }
+        if let field = view as? NSTextField, field.isEditable { return field }
+        return view.subviews.lazy.compactMap { self.editableTextField(in: $0) }.first
     }
 
     private func open(_ item: ClipboardItem) {

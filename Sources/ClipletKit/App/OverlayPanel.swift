@@ -38,6 +38,9 @@ final class OverlayPanel: NSPanel {
         }
         alphaValue = 0
         makeKeyAndOrderFront(nil)
+        // Focusing the search field on open shows the input-method indicator, which
+        // flashes as a large block; the first typed character focuses it instead.
+        makeFirstResponder(nil)
         NSAnimationContext.runAnimationGroup { context in
             context.duration = duration
             context.timingFunction = timing
@@ -87,5 +90,6 @@ final class OverlayPanel: NSPanel {
         container.addSubview(surface)
         presentationSurface = surface
         contentView = container
+        initialFirstResponder = container
     }
 }
