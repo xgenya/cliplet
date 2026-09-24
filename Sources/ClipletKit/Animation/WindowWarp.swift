@@ -48,14 +48,14 @@ enum WindowWarp {
     nonisolated static func genieMesh(
         window: CGRect, neck: CGRect, collapse: Double, rows: Int
     ) -> [MeshPoint] {
-        let bend = min(collapse / 0.4, 1)
-        let slide = max((collapse - 0.4) / 0.6, 0)
+        let bend = CGFloat(min(collapse / 0.4, 1))
+        let slide = CGFloat(max((collapse - 0.4) / 0.6, 0))
         let neckY = neck.maxY
         let mouthY = window.maxY
         let top = window.minY + (neckY - window.minY) * slide
         let bottom = window.maxY + (neckY - window.maxY) * slide
         return (0..<rows).flatMap { row -> [MeshPoint] in
-            let v = Double(row) / Double(rows - 1)
+            let v = CGFloat(row) / CGFloat(rows - 1)
             let y = top + (bottom - top) * v
             let u = min(max((y - neckY) / (mouthY - neckY), 0), 1)
             let squeeze = (1 - u * u * (3 - 2 * u)) * bend
