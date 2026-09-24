@@ -1,5 +1,5 @@
 import XCTest
-@testable import Cliplet
+@testable import ClipletKit
 
 /// Opt-in, release-mode measurements. CI archives the report rather than imposing
 /// a machine-dependent wall-clock threshold on developer laptops.

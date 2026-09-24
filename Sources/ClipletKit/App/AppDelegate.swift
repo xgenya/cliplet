@@ -24,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var storageSubscription: AnyCancellable?
     private var languageSubscription: AnyCancellable?
     private var hotkeySubscription: AnyCancellable?
+    private var revertedHotkey: GlobalHotkey?
     private var workspaceActivationObserver: NSObjectProtocol?
     private var isTerminating = false
 
@@ -72,7 +73,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             hotkeySubscription = settings.$globalHotkey.dropFirst().receive(on: RunLoop.main).sink {
                 [weak self] shortcut in
                 guard let self else { return }
-                self.registerHotkey(shortcut)
+                if shortcut == self.revertedHotkey {
+                    self.revertedHotkey = nil
+                } else {
+                    self.registerHotkey(shortcut)
+                }
                 self.buildMainMenu()
                 self.buildStatusItem()
             }
@@ -349,7 +354,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func registerHotkey(_ shortcut: GlobalHotkey) {
-        settings.setHotkeyRegistrationSucceeded(hotkey.register(shortcut))
+        let succeeded = hotkey.register(shortcut)
+        settings.setHotkeyRegistrationSucceeded(succeeded)
+        // Keep the stored shortcut equal to the one that is actually active.
+        if !succeeded, let active = hotkey.registeredShortcut {
+            revertedHotkey = active
+            settings.globalHotkey = active
+        }
     }
 
     private func showSettings() {

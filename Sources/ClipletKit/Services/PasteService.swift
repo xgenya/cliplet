@@ -1,5 +1,6 @@
 import AppKit
 @preconcurrency import ApplicationServices
+import Carbon
 import Foundation
 import Combine
 
@@ -44,7 +45,7 @@ final class PasteService {
     func write(_ item: ClipboardItem, plainText: Bool = false) -> Bool {
         cancelPendingPaste()
         // Read all required payloads before altering the user's clipboard.
-        let usePlainText = plainText && item.text != nil
+        let usePlainText = plainText && item.kind != .image && item.kind != .file && item.text != nil
         let imageData: Data?
         let rtfData: Data?
         let htmlData: Data?
@@ -162,14 +163,40 @@ final class PasteService {
                 NSWorkspace.shared.frontmostApplication?.processIdentifier == request.application.processIdentifier
             else { self.finish(request, succeeded: false); return }
             let source = CGEventSource(stateID: .hidSystemState)
-            let down = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: true)
-            let up = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: false)
+            let key = Self.commandKeyCode(for: "v") ?? CGKeyCode(kVK_ANSI_V)
+            let down = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: true)
+            let up = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: false)
             guard let down, let up else { self.finish(request, succeeded: false); return }
             down.flags = .maskCommand
             up.flags = .maskCommand
             down.post(tap: .cghidEventTap)
             up.post(tap: .cghidEventTap)
             self.finish(request, succeeded: true)
+        }
+    }
+
+    /// Key code that produces `character` with Command held in the current layout.
+    /// Layouts such as Dvorak move V; "⌘ QWERTY" variants only differ under Command.
+    static func commandKeyCode(for character: String) -> CGKeyCode? {
+        guard let source = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue(),
+            let property = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData)
+        else { return nil }
+        let layoutData = Unmanaged<CFData>.fromOpaque(property).takeUnretainedValue() as Data
+        return layoutData.withUnsafeBytes { buffer -> CGKeyCode? in
+            guard let layout = buffer.baseAddress?.assumingMemoryBound(to: UCKeyboardLayout.self) else { return nil }
+            let modifiers = UInt32(cmdKey >> 8) & 0xFF
+            for code in [UInt16(kVK_ANSI_V)] + Array(0..<128) {
+                var deadKeys: UInt32 = 0
+                var length = 0
+                var characters = [UniChar](repeating: 0, count: 4)
+                let status = UCKeyTranslate(
+                    layout, code, UInt16(kUCKeyActionDown), modifiers, UInt32(LMGetKbdType()),
+                    OptionBits(kUCKeyTranslateNoDeadKeysBit), &deadKeys, characters.count, &length, &characters)
+                if status == noErr, String(utf16CodeUnits: characters, count: length).lowercased() == character {
+                    return CGKeyCode(code)
+                }
+            }
+            return nil
         }
     }
 

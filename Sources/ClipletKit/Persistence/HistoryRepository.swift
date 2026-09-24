@@ -96,9 +96,23 @@ final class HistoryRepository: HistoryPersistence, @unchecked Sendable {
                     guard header.version == 1 else { throw HistoryStorageError.unsupportedVersion(header.version) }
                     items = try decoder.decode(Document.self, from: data).items
                 }
-                for index in items.indices {
-                    items[index].payloadDirectory = payloadDirectory
-                    try validatePayloads(items[index])
+                items = try items.compactMap { item in
+                    var item = item
+                    item.payloadDirectory = payloadDirectory
+                    // A payload file that no longer exists cannot be recovered; drop only
+                    // that reference. Unreadable or invalid references still block writes.
+                    for (key, name) in item.payloadReferences ?? [:]
+                    where Self.isPayloadName(name)
+                        && !FileManager.default.fileExists(atPath: payloadDirectory.appendingPathComponent(name).path)
+                    {
+                        item.payloadReferences?[key] = nil
+                    }
+                    if item.payloadReferences?.isEmpty == true { item.payloadReferences = nil }
+                    if item.kind == .image, item.imageData == nil, item.payloadReferences?["image"] == nil {
+                        return nil
+                    }
+                    try validatePayloads(item)
+                    return item
                 }
                 canWrite = true
                 // Migration commits payloads before replacing the legacy metadata file.

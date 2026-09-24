@@ -41,7 +41,7 @@ final class ClipboardStore: ObservableObject {
     func add(_ item: ClipboardItem) -> UUID {
         var item = item
         var updated = items
-        if let index = updated.firstIndex(where: { $0.contentHash == item.contentHash }) {
+        if let index = updated.firstIndex(where: { $0.contentHash == item.contentHash && $0.kind == item.kind }) {
             let existing = updated.remove(at: index)
             item.id = existing.id
             item.isPinned = existing.isPinned

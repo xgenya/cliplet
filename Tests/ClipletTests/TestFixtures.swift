@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
 import XCTest
-@testable import Cliplet
+@testable import ClipletKit
 
 func fixtureItem(
     _ text: String = "synthetic test", date: Date = Date(), pinned: Bool = false,

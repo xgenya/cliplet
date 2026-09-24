@@ -3,7 +3,7 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 import XCTest
-@testable import Cliplet
+@testable import ClipletKit
 
 final class HistoryRenderingTests: XCTestCase {
     func testImageThumbnailIsDownsampledAndReusedAfterPayloadLeavesDisk() async throws {

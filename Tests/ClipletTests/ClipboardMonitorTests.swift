@@ -1,7 +1,7 @@
 import AppKit
 import Combine
 import XCTest
-@testable import Cliplet
+@testable import ClipletKit
 
 private actor SuspendedRecognizer: ImageRecognizing {
     private(set) var started = false
@@ -113,6 +113,13 @@ final class ClipboardMonitorTests: XCTestCase {
         XCTAssertEqual(pasteboard.data(forType: .html), item.htmlData)
         // Plain-text preference must still paste an image when it has no recognized text.
         XCTAssertTrue(paste.write(fixtureItem(image: fixtureImage()), plainText: true))
+        // Recognized text is for search; plain-text preference must not replace the image.
+        var recognized = fixtureItem(image: fixtureImage())
+        recognized.text = "ocr text"
+        recognized.recognitionCompleted = true
+        XCTAssertTrue(paste.write(recognized, plainText: true))
+        XCTAssertNotNil(pasteboard.data(forType: .tiff))
+        XCTAssertNil(pasteboard.string(forType: .string))
     }
 
     @MainActor

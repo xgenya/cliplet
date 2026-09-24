@@ -1,6 +1,6 @@
 import Combine
 import XCTest
-@testable import Cliplet
+@testable import ClipletKit
 
 // Async entry points avoid the isolated-deinit runtime bug in synchronous XCTest.
 // https://github.com/swiftlang/swift/issues/85663
@@ -24,6 +24,21 @@ final class ClipboardStoreTests: XCTestCase {
         try await waitUntil { store.items.map(\.id) == [pinned.id] }
         try store.flush()
         XCTAssertEqual(try repository.load().map(\.id), [pinned.id])
+    }
+
+    @MainActor
+    func testEqualHashesOfDifferentKindsAreNotMerged() async throws {
+        let (settings, cleanup) = isolatedSettings()
+        defer { cleanup() }
+        let store = ClipboardStore(settings: settings, repository: MemoryHistoryRepository(), maintenanceInterval: nil)
+        let text = fixtureItem("file:///tmp/example")
+        var file = fixtureItem("file:///tmp/example")
+        file.kind = .file
+        file.text = nil
+        file.fileURLs = [URL(fileURLWithPath: "/tmp/example")]
+        store.add(text)
+        store.add(file)
+        XCTAssertEqual(Set(store.items.map(\.kind)), [.text, .file])
     }
 
     @MainActor

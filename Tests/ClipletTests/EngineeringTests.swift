@@ -2,7 +2,7 @@ import Darwin
 import AppKit
 import Foundation
 import XCTest
-@testable import Cliplet
+@testable import ClipletKit
 
 final class EngineeringTests: XCTestCase {
     func testInstanceLockPreventsDuplicatesAndReleasesOnExit() throws {

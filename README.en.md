@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Sources/Cliplet/Resources/AppIcon.png" width="96" alt="Cliplet icon">
+  <img src="Sources/ClipletKit/Resources/AppIcon.png" width="96" alt="Cliplet icon">
 </p>
 
 <h1 align="center">Cliplet — Clipboard Manager for macOS</h1>
@@ -179,7 +179,8 @@ For interface work, use preview mode. It uses synthetic data, does not read your
 ### Project structure
 
 ```text
-Sources/Cliplet/
+Sources/Cliplet/      # Executable entry point; contains only main.swift
+Sources/ClipletKit/
 ├── App/          # App lifecycle, windows, and dependency setup
 ├── Domain/       # History retention, sorting, and search rules
 ├── Models/       # Clipboard entry models

@@ -12,16 +12,19 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "Cliplet",
-            path: "Sources/Cliplet",
-            resources: [.process("Resources")],
-            swiftSettings: [.swiftLanguageMode(.v5), .unsafeFlags(["-strict-concurrency=complete"])]
+            dependencies: ["ClipletKit"],
+            path: "Sources/Cliplet"
+        ),
+        .target(
+            name: "ClipletKit",
+            path: "Sources/ClipletKit",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "ClipletTests",
-            dependencies: ["Cliplet"],
+            dependencies: ["ClipletKit"],
             path: "Tests/ClipletTests",
-            resources: [.copy("Fixtures")],
-            swiftSettings: [.swiftLanguageMode(.v5), .unsafeFlags(["-strict-concurrency=complete"])]
+            resources: [.copy("Fixtures")]
         ),
     ]
 )

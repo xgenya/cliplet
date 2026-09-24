@@ -1,5 +1,5 @@
 import XCTest
-@testable import Cliplet
+@testable import ClipletKit
 
 final class HistoryRepositoryTests: XCTestCase {
     private var directory: URL!
@@ -184,8 +184,18 @@ final class HistoryRepositoryTests: XCTestCase {
         XCTAssertTrue(try repository.load().isEmpty)
     }
 
-    func testInvalidOrMissingPayloadBlocksWrites() throws {
-        for reference in ["../outside", String(repeating: "a", count: 64) + ".payload"] {
+    func testInvalidOrUnreadablePayloadBlocksWrites() throws {
+        let unreadable = String(repeating: "a", count: 64) + ".payload"
+        let payloads = directory.appendingPathComponent("Payloads", isDirectory: true)
+        try FileManager.default.createDirectory(at: payloads, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(
+            at: payloads.appendingPathComponent(unreadable), withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o000])
+        defer {
+            try? FileManager.default.setAttributes(
+                [.posixPermissions: 0o700], ofItemAtPath: payloads.appendingPathComponent(unreadable).path)
+        }
+        for reference in ["../outside", unreadable] {
             var item = fixtureItem()
             item.payloadReferences = ["image": reference]
             let original = try JSONEncoder().encode([item])
@@ -196,5 +206,22 @@ final class HistoryRepositoryTests: XCTestCase {
             XCTAssertThrowsError(try repository.flush())
             XCTAssertEqual(try Data(contentsOf: historyURL), original)
         }
+    }
+
+    func testMissingPayloadFileOnlyDropsAffectedContent() throws {
+        let missing = String(repeating: "b", count: 64) + ".payload"
+        var text = fixtureItem("keeps text")
+        text.payloadReferences = ["rtf": missing]
+        var image = fixtureItem("image", image: nil)
+        image.kind = .image
+        image.text = nil
+        image.payloadReferences = ["image": missing]
+        try JSONEncoder().encode([text, image]).write(to: historyURL)
+        let repository = HistoryRepository(directory: directory)
+        let loaded = try repository.load()
+        XCTAssertEqual(loaded.map(\.id), [text.id])
+        XCTAssertNil(loaded.first?.payloadReferences)
+        repository.save(loaded) { _ in }
+        XCTAssertNoThrow(try repository.flush())
     }
 }

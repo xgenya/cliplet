@@ -1,5 +1,6 @@
+import AppKit
 import XCTest
-@testable import Cliplet
+@testable import ClipletKit
 
 final class ClipletTests: XCTestCase {
     func testContentClassification() {
@@ -25,6 +26,23 @@ final class ClipletTests: XCTestCase {
         XCTAssertEqual(shortcut.keyEquivalent, "v")
         XCTAssertTrue(shortcut.appKitModifiers.contains(.option))
         XCTAssertEqual(shortcut.appKitModifiers.intersection([.command, .control, .shift]), [])
+    }
+
+    func testRecordedShortcutRequiresNonShiftModifier() {
+        func event(_ flags: NSEvent.ModifierFlags) -> NSEvent? {
+            NSEvent.keyEvent(
+                with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: 0, context: nil,
+                characters: "a", charactersIgnoringModifiers: "a", isARepeat: false, keyCode: 0)
+        }
+        XCTAssertNil(event([]).flatMap(GlobalHotkey.init(event:)))
+        XCTAssertNil(event(.shift).flatMap(GlobalHotkey.init(event:)))
+        XCTAssertNotNil(event([.shift, .option]).flatMap(GlobalHotkey.init(event:)))
+        XCTAssertNotNil(event(.command).flatMap(GlobalHotkey.init(event:)))
+    }
+
+    @MainActor
+    func testPasteKeyCodeResolvesInCurrentLayout() {
+        XCTAssertNotNil(PasteService.commandKeyCode(for: "v"))
     }
 }
 

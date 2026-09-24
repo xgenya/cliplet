@@ -47,7 +47,8 @@ struct GlobalHotkey: Equatable {
         if flags.contains(.option) { modifiers |= UInt32(optionKey) }
         if flags.contains(.shift) { modifiers |= UInt32(shiftKey) }
         if flags.contains(.command) { modifiers |= UInt32(cmdKey) }
-        guard modifiers != 0 else { return nil }
+        // Shift alone would capture ordinary typing system-wide.
+        guard modifiers & ~UInt32(shiftKey) != 0 else { return nil }
 
         let equivalent = event.charactersIgnoringModifiers ?? ""
         guard !equivalent.isEmpty else { return nil }
@@ -80,7 +81,7 @@ struct GlobalHotkey: Equatable {
 final class HotkeyService {
     private var hotKeyRef: EventHotKeyRef?
     private var handlerRef: EventHandlerRef?
-    private var registeredShortcut: GlobalHotkey?
+    private(set) var registeredShortcut: GlobalHotkey?
     var onPressed: (() -> Void)?
 
     @discardableResult

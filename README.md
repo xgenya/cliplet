@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Sources/Cliplet/Resources/AppIcon.png" width="96" alt="Cliplet 图标">
+  <img src="Sources/ClipletKit/Resources/AppIcon.png" width="96" alt="Cliplet 图标">
 </p>
 
 <h1 align="center">Cliplet · 拾片 — macOS 剪贴板管理器</h1>
@@ -179,7 +179,8 @@ open "build/Cliplet Dev.app"
 ### 项目结构
 
 ```text
-Sources/Cliplet/
+Sources/Cliplet/      # 可执行入口，仅包含 main.swift
+Sources/ClipletKit/
 ├── App/          # 应用生命周期、窗口和依赖组装
 ├── Domain/       # 历史保留、排序与搜索规则
 ├── Models/       # 剪贴板条目模型

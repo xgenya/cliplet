@@ -22,7 +22,7 @@ cleanup() {
 trap cleanup EXIT
 mkdir -p "$STAGED_APP/Contents/MacOS" "$STAGED_APP/Contents/Resources"
 cp "$BIN_DIR/Cliplet" "$STAGED_APP/Contents/MacOS/Cliplet"
-cp -R "$BIN_DIR/Cliplet_Cliplet.bundle" "$STAGED_APP/Contents/Resources/"
+cp -R "$BIN_DIR/Cliplet_ClipletKit.bundle" "$STAGED_APP/Contents/Resources/"
 cp "$ROOT_DIR/Resources/Info.plist" "$STAGED_APP/Contents/Info.plist"
 cp "$ROOT_DIR/Resources/AppIcon.icns" "$STAGED_APP/Contents/Resources/"
 for LANGUAGE in en zh-Hans; do
