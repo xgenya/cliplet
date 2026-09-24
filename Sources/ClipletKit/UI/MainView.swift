@@ -78,11 +78,17 @@ struct MainView: View {
 
     private var searchHeader: some View {
         HStack {
-            TextField(L10n.tr("Search Clipboard History"), text: $viewState.query)
-                .textFieldStyle(.plain)
-                .font(.system(size: 16))
-                .focused($focusedField, equals: .history)
-                .accessibilityLabel(L10n.tr("Search clipboard history"))
+            // Fixed colors: the default vibrant ones render pale while the panel's
+            // open animation transforms the glass surface.
+            TextField(
+                L10n.tr("Search Clipboard History"), text: $viewState.query,
+                prompt: Text(L10n.tr("Search Clipboard History")).foregroundStyle(searchPlaceholderColor)
+            )
+            .foregroundStyle(searchTextColor)
+            .textFieldStyle(.plain)
+            .font(.system(size: 16))
+            .focused($focusedField, equals: .history)
+            .accessibilityLabel(L10n.tr("Search clipboard history"))
             Menu {
                 Button {
                     viewState.filter = nil
@@ -109,6 +115,11 @@ struct MainView: View {
         }
         .padding(.horizontal, 16)
         .frame(height: 64)
+    }
+
+    private var searchTextColor: Color { colorScheme == .dark ? Color(white: 0.96) : Color(white: 0.1) }
+    private var searchPlaceholderColor: Color {
+        colorScheme == .dark ? Color(white: 1, opacity: 0.6) : Color(white: 0, opacity: 0.6)
     }
 
     @ViewBuilder private var content: some View {
