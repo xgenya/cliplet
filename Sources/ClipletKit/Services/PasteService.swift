@@ -4,27 +4,39 @@ import Carbon
 import Foundation
 import Combine
 
+enum PasteOutcome: Equatable {
+    /// Written to the clipboard and pasted into the target application.
+    case pasted
+    /// Written to the clipboard only, because automatic paste is off or has no target.
+    case copied
+    /// Written to the clipboard; automatic paste needs Accessibility permission.
+    case needsAccessibility
+    case failed
+}
+
 @MainActor
 final class PasteService {
     weak var monitor: ClipboardMonitor?
     private let settings: AppSettings
     private let pasteboard: ClipboardAccess
+    private let isTrusted: () -> Bool
 
-    init(settings: AppSettings = .shared, pasteboard: ClipboardAccess = SystemClipboard()) {
+    init(
+        settings: AppSettings = .shared, pasteboard: ClipboardAccess = SystemClipboard(),
+        isTrusted: @escaping () -> Bool = { AXIsProcessTrusted() }
+    ) {
         self.settings = settings
         self.pasteboard = pasteboard
+        self.isTrusted = isTrusted
     }
     private struct PasteRequest {
         let id: UUID
         let application: NSRunningApplication
         let clipboardChangeCount: Int
-        let completion: (Bool) -> Void
+        let completion: (PasteOutcome) -> Void
     }
 
     private var activeRequest: PasteRequest?
-    private var permissionTimer: Timer?
-    private var permissionDeadline: Date?
-    private var hasRequestedAccessibilityPermission = false
     private var automaticPasteSubscription: AnyCancellable?
 
     private func observeSettings() {
@@ -37,9 +49,7 @@ final class PasteService {
     func cancelPendingPaste() {
         let request = activeRequest
         activeRequest = nil
-        stopPermissionTimer()
-        hasRequestedAccessibilityPermission = false
-        request?.completion(false)
+        request?.completion(.failed)
     }
 
     func write(_ item: ClipboardItem, plainText: Bool = false) -> Bool {
@@ -72,58 +82,43 @@ final class PasteService {
         }
     }
 
-    func paste(_ item: ClipboardItem, into application: NSRunningApplication?, completion: @escaping (Bool) -> Void) {
+    /// Never waits for permission: an untrusted process returns immediately with the
+    /// content on the clipboard, so a later grant cannot trigger an unexpected paste.
+    func paste(
+        _ item: ClipboardItem, into application: NSRunningApplication?,
+        completion: @escaping (PasteOutcome) -> Void
+    ) {
         observeSettings()
-        guard write(item, plainText: settings.preferPlainText) else { completion(false); return }
-        guard settings.pasteAutomatically, let application else { completion(true); return }
+        guard write(item, plainText: settings.preferPlainText) else { completion(.failed); return }
+        guard settings.pasteAutomatically, let application else { completion(.copied); return }
+        guard isTrusted() else { completion(.needsAccessibility); return }
         let request = PasteRequest(
             id: UUID(), application: application, clipboardChangeCount: pasteboard.changeCount, completion: completion)
         activeRequest = request
-        guard AXIsProcessTrusted() else {
-            requestAccessibilityPermissionOnce()
-            waitForAccessibilityPermission()
-            return
-        }
-
         performPaste(request)
     }
 
-    private func requestAccessibilityPermissionOnce() {
-        guard !hasRequestedAccessibilityPermission else { return }
-        hasRequestedAccessibilityPermission = true
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-        AXIsProcessTrustedWithOptions(options)
+    private static let promptedKey = "hasRequestedAccessibilityPermission"
+
+    static func hasPromptedForAccessibility(defaults: UserDefaults = AppEnvironment.current.defaults) -> Bool {
+        defaults.bool(forKey: promptedKey)
     }
 
-    private func waitForAccessibilityPermission() {
-        permissionDeadline = Date().addingTimeInterval(60)
-        guard permissionTimer == nil else { return }
-        let timer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.checkAccessibilityPermission() }
+    /// The system prompt is what adds the app to the Accessibility list, so it is used
+    /// once; later requests open the settings pane instead of showing a second dialog.
+    static func requestAccessibility(defaults: UserDefaults = AppEnvironment.current.defaults) {
+        guard !AXIsProcessTrusted() else { return }
+        if hasPromptedForAccessibility(defaults: defaults) {
+            if let url = URL(
+                string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+            {
+                NSWorkspace.shared.open(url)
+            }
+        } else {
+            defaults.set(true, forKey: promptedKey)
+            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+            AXIsProcessTrustedWithOptions(options)
         }
-        RunLoop.main.add(timer, forMode: .common)
-        permissionTimer = timer
-    }
-
-    private func checkAccessibilityPermission() {
-        guard let request = activeRequest else {
-            stopPermissionTimer()
-            return
-        }
-        guard isRequestValid(request) else { cancelPendingPaste(); return }
-        if AXIsProcessTrusted() {
-            hasRequestedAccessibilityPermission = false
-            stopPermissionTimer()
-            performPaste(request)
-        } else if permissionDeadline.map({ Date() >= $0 }) == true {
-            cancelPendingPaste()
-        }
-    }
-
-    private func stopPermissionTimer() {
-        permissionTimer?.invalidate()
-        permissionTimer = nil
-        permissionDeadline = nil
     }
 
     private func isRequestValid(_ request: PasteRequest) -> Bool {
@@ -134,8 +129,7 @@ final class PasteService {
     private func finish(_ request: PasteRequest, succeeded: Bool) {
         guard activeRequest?.id == request.id else { return }
         activeRequest = nil
-        stopPermissionTimer()
-        request.completion(succeeded)
+        request.completion(succeeded ? .pasted : .failed)
     }
 
     private func performPaste(_ request: PasteRequest) {
@@ -159,7 +153,7 @@ final class PasteService {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
             guard let self else { return }
-            guard self.isRequestValid(request), AXIsProcessTrusted(),
+            guard self.isRequestValid(request), self.isTrusted(),
                 NSWorkspace.shared.frontmostApplication?.processIdentifier == request.application.processIdentifier
             else { self.finish(request, succeeded: false); return }
             let source = CGEventSource(stateID: .hidSystemState)
@@ -198,9 +192,5 @@ final class PasteService {
             }
             return nil
         }
-    }
-
-    isolated deinit {
-        permissionTimer?.invalidate()
     }
 }

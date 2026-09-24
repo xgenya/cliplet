@@ -123,6 +123,26 @@ final class ClipboardMonitorTests: XCTestCase {
     }
 
     @MainActor
+    func testPasteWithoutAccessibilityCopiesImmediately() async {
+        let (settings, cleanup) = isolatedSettings()
+        defer { cleanup() }
+        let pasteboard = MemoryClipboard()
+        let paste = PasteService(settings: settings, pasteboard: pasteboard, isTrusted: { false })
+        var outcomes: [PasteOutcome] = []
+        paste.paste(fixtureItem("needs permission"), into: .current) { outcomes.append($0) }
+        XCTAssertEqual(outcomes, [.needsAccessibility])
+        XCTAssertEqual(pasteboard.string(forType: .string), "needs permission")
+
+        settings.pasteAutomatically = false
+        paste.paste(fixtureItem("copy only"), into: .current) { outcomes.append($0) }
+        var broken = fixtureItem()
+        broken.payloadReferences = ["rtf": "invalid-reference"]
+        paste.paste(broken, into: .current) { outcomes.append($0) }
+        XCTAssertEqual(outcomes, [.needsAccessibility, .copied, .failed])
+        XCTAssertEqual(pasteboard.string(forType: .string), "copy only")
+    }
+
+    @MainActor
     func testMissingPayloadDoesNotClearClipboard() async {
         let (settings, cleanup) = isolatedSettings()
         defer { cleanup() }

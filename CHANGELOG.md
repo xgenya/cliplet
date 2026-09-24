@@ -17,6 +17,8 @@
 - Image recognition runs off the main actor; retention runs independently of capture.
 - Application code moved into the `ClipletKit` library target; the package uses the Swift 6 language mode.
 - A missing payload file no longer blocks the whole history; only the affected content is dropped.
+- Without Accessibility permission, pasting copies immediately and explains how to paste or grant access,
+  instead of waiting up to 60 seconds and pasting later.
 
 ### Fixed
 

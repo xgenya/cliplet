@@ -150,3 +150,8 @@
 "Quit Anyway" = "Quit Anyway";
 
 "Path" = "Path";
+
+"Copied to Clipboard" = "Copied to Clipboard";
+"Press Command–V to paste. To paste into the active app automatically, allow Cliplet in Accessibility settings." = "Press Command–V to paste. To paste into the active app automatically, allow Cliplet in Accessibility settings.";
+"Turn Off Automatic Paste" = "Turn Off Automatic Paste";
+"OK" = "OK";

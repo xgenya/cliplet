@@ -150,3 +150,8 @@
 "Quit Anyway" = "仍然退出";
 
 "Path" = "路径";
+
+"Copied to Clipboard" = "已复制到剪贴板";
+"Press Command–V to paste. To paste into the active app automatically, allow Cliplet in Accessibility settings." = "按 Command–V 即可粘贴。如需自动粘贴到当前应用，请在辅助功能设置中允许 Cliplet。";
+"Turn Off Automatic Paste" = "关闭自动粘贴";
+"OK" = "好";

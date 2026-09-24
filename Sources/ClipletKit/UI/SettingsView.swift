@@ -412,11 +412,7 @@ private struct PrivacySettingsPane: View {
                     .foregroundStyle(accessibilityGranted ? Color.green : Color.secondary)
                 }
                 Button(L10n.tr("Open Accessibility Settings…")) {
-                    if let url = URL(
-                        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
-                    {
-                        NSWorkspace.shared.open(url)
-                    }
+                    PasteService.requestAccessibility()
                 }
             } header: {
                 Text(L10n.tr("Accessibility"))

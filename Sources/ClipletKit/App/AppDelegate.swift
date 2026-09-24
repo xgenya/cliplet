@@ -25,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var languageSubscription: AnyCancellable?
     private var hotkeySubscription: AnyCancellable?
     private var revertedHotkey: GlobalHotkey?
+    private var hasShownAccessibilityHint = false
     private var workspaceActivationObserver: NSObjectProtocol?
     private var isTerminating = false
 
@@ -318,8 +319,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func paste(_ item: ClipboardItem) {
         closePanel()
-        pasteService.paste(item, into: previousApplication) { [weak self] succeeded in
-            if succeeded { self?.store.markUsed(item.id) }
+        pasteService.paste(item, into: previousApplication) { [weak self] outcome in
+            guard let self, outcome != .failed else { return }
+            self.store.markUsed(item.id)
+            if outcome == .needsAccessibility { self.showAccessibilityHintOnce() }
+        }
+    }
+
+    private func showAccessibilityHintOnce() {
+        guard !hasShownAccessibilityHint else { return }
+        hasShownAccessibilityHint = true
+        // The first request uses only the system prompt, which offers its own settings button.
+        guard PasteService.hasPromptedForAccessibility() else {
+            PasteService.requestAccessibility()
+            return
+        }
+        let target = previousApplication
+        let alert = NSAlert()
+        alert.messageText = L10n.tr("Copied to Clipboard")
+        alert.informativeText = L10n.tr(
+            "Press Command–V to paste. To paste into the active app automatically, allow Cliplet in Accessibility settings."
+        )
+        alert.addButton(withTitle: L10n.tr("Open Accessibility Settings…"))
+        alert.addButton(withTitle: L10n.tr("Turn Off Automatic Paste"))
+        alert.addButton(withTitle: L10n.tr("OK"))
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            PasteService.requestAccessibility()
+        case .alertSecondButtonReturn:
+            settings.pasteAutomatically = false
+            target?.activate()
+        default:
+            target?.activate()
         }
     }
 
