@@ -48,6 +48,7 @@ Cliplet is an independent project and is not affiliated with Raycast. The inspir
 - **Image recognition**: Recognize text and QR codes locally with Apple Vision, then search or copy the results.
 - **Recording controls**: Pause recording, exclude apps, configure retention and entry limits, and launch at login.
 - **Native interface**: Chinese and English localization, light and dark appearances, Liquid Glass on macOS 26+, and native material fallbacks on earlier systems.
+- **Appearance and animation**: Adjust the history window between clear and legible glass, and choose an open animation such as Spotlight, Bounce, or Zoom, with a live preview in Settings.
 
 <details>
 <summary>More screenshots</summary>
@@ -78,6 +79,8 @@ The Chinese name “拾片” means picking up fragments. Cliplet makes the thin
 On macOS 26 and later, Cliplet uses native Liquid Glass for the history window and action panel. Translucent surfaces retain a visual connection to the desktop and current app, while rounded corners, edges, and depth distinguish the temporary controls from the work behind them.
 
 Glass primarily supports the window and action surfaces, with text, images, and list content arranged for clear reading. The design prioritizes recognition and efficient interaction, using material layers sparingly to suit a compact clipboard workflow.
+
+A slider in Settings moves the history window’s glass between Clear and Legible. The default range keeps text readable; Unrestricted Adjustment allows more transparent materials. Reduce Transparency always uses the legible material, and Reduce Motion turns the open animation into a fade.
 
 The history window uses AppKit’s `NSGlassEffectView`; the action panel uses SwiftUI’s `glassEffect`. On macOS 14–15, both fall back to native `NSVisualEffectView` materials while retaining the same core features and interactions. The system renders these materials, so their appearance changes with light or dark mode and the background.
 
