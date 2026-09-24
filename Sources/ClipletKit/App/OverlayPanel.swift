@@ -5,37 +5,16 @@ import SwiftUI
 final class OverlayPanel: NSPanel {
     nonisolated static let cornerRadius: CGFloat = 28
     nonisolated static let animationInset: CGFloat = 12
-    private weak var presentationSurface: NSView?
-
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
 
     func presentAnimated() {
         guard !isVisible else { makeKeyAndOrderFront(nil); return }
-        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         let duration = 0.12
         let timing = CAMediaTimingFunction(controlPoints: 0.16, 1, 0.3, 1)
         contentView?.layoutSubtreeIfNeeded()
-        if let layer = presentationSurface?.layer {
-            layer.removeAnimation(forKey: "panelPresentation")
-            if !reduceMotion {
-                // Scale the complete glass surface around its center without
-                // resizing the window or reflowing the SwiftUI content.
-                let scale: CGFloat = 0.92
-                var transform = CATransform3DMakeScale(scale, scale, 1)
-                transform.m41 = layer.bounds.width * (0.5 - layer.anchorPoint.x) * (1 - scale)
-                transform.m42 = layer.bounds.height * (0.5 - layer.anchorPoint.y) * (1 - scale)
-                let animation = CASpringAnimation(keyPath: "transform")
-                animation.mass = 1
-                animation.stiffness = 520
-                animation.damping = 24
-                animation.initialVelocity = 0
-                animation.fromValue = NSValue(caTransform3D: transform)
-                animation.toValue = NSValue(caTransform3D: CATransform3DIdentity)
-                animation.duration = animation.settlingDuration
-                layer.add(animation, forKey: "panelPresentation")
-            }
-        }
+        // Only fade: a layer transform on the glass surface drops text-field
+        // vibrancy until it settles, so the search text renders pale.
         alphaValue = 0
         makeKeyAndOrderFront(nil)
         // Focusing the search field on open shows the input-method indicator, which
@@ -52,8 +31,8 @@ final class OverlayPanel: NSPanel {
         let hosting = NSHostingView(rootView: root)
         // One native mask trims both the material and its content. A second
         // SwiftUI mask used a different curve and exposed footer corners.
-        // Transparent room around the surface lets the spring overshoot without
-        // clipping the glass rim against the native window's rectangular bounds.
+        // Transparent room around the surface keeps the glass rim from clipping
+        // against the native window's rectangular bounds.
         let container = NSView(frame: NSRect(origin: .zero, size: frame.size))
         container.wantsLayer = true
         container.layer?.backgroundColor = NSColor.clear.cgColor
@@ -88,7 +67,6 @@ final class OverlayPanel: NSPanel {
         material.autoresizingMask = [.width, .height]
         surface.addSubview(material)
         container.addSubview(surface)
-        presentationSurface = surface
         contentView = container
         initialFirstResponder = container
     }
