@@ -55,9 +55,10 @@ final class PanelAnimationTests: XCTestCase {
             let entrance = animation.entrance
             let duration = max(entrance.horizontal.settlingTime, entrance.verticalSpring.settlingTime)
             for time in stride(from: 0.0, through: duration, by: 0.002) {
-                let x = entrance.horizontal.remaining(at: time)
+                let x = CGFloat(entrance.horizontal.remaining(at: time))
+                let y = CGFloat(entrance.verticalSpring.remaining(at: time))
                 let scaleX = 1 + (entrance.horizontal.scale - 1) * x
-                let scaleY = 1 + (entrance.verticalSpring.scale - 1) * entrance.verticalSpring.remaining(at: time)
+                let scaleY = 1 + (entrance.verticalSpring.scale - 1) * y
                 let spillX = (scaleX - 1) * size.width / 2
                 let spillY = (scaleY - 1) * size.height / 2 + abs(entrance.offset * x)
                 XCTAssertLessThanOrEqual(spillX, OverlayPanel.animationInset, "\(animation) at \(time)")
