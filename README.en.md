@@ -168,6 +168,7 @@ Common commands:
 | `make package-test` | Build the app and verify packaging and launch after relocation |
 | `make performance` | Run performance tests in Release mode |
 | `make app` | Build and package the Release app |
+| `make run-app` / `make run-dev-app` | Build and launch the app, replacing a running older copy |
 
 For interface work, use preview mode. It uses synthetic data, does not read your real history, and does not monitor the system clipboard:
 

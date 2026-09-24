@@ -168,6 +168,7 @@ open "build/Cliplet Dev.app"
 | `make package-test` | 构建应用并检查打包、移动后的启动行为 |
 | `make performance` | 运行 Release 模式性能测试 |
 | `make app` | 构建并打包 Release 应用 |
+| `make run-app` / `make run-dev-app` | 构建并启动应用，自动替换正在运行的旧版本 |
 
 仅调试界面时，可使用演示模式。该模式使用合成数据，不读取真实历史，也不监听系统剪贴板：
 
