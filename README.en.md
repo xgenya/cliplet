@@ -182,6 +182,7 @@ For interface work, use preview mode. It uses synthetic data, does not read your
 ```text
 Sources/Cliplet/      # Executable entry point; contains only main.swift
 Sources/ClipletKit/
+├── Animation/    # Panel open animation presets and playback
 ├── App/          # App lifecycle, windows, and dependency setup
 ├── Domain/       # History retention, sorting, and search rules
 ├── Models/       # Clipboard entry models

@@ -182,6 +182,7 @@ open "build/Cliplet Dev.app"
 ```text
 Sources/Cliplet/      # 可执行入口，仅包含 main.swift
 Sources/ClipletKit/
+├── Animation/    # 面板打开动画预设与播放
 ├── App/          # 应用生命周期、窗口和依赖组装
 ├── Domain/       # 历史保留、排序与搜索规则
 ├── Models/       # 剪贴板条目模型

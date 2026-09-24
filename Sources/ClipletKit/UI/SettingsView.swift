@@ -155,6 +155,7 @@ struct SettingsView: View {
 
 private struct GeneralSettingsPane: View {
     @ObservedObject var settings: AppSettings
+    @State private var animationReplay = 0
 
     var body: some View {
         Form {
@@ -212,7 +213,8 @@ private struct GeneralSettingsPane: View {
                         description: L10n.tr("Choose between a clearer panel and more legible content."))
                     PanelGlassPreview(
                         look: PanelGlass.look(
-                            legibility: settings.panelLegibility, unrestricted: settings.panelUnrestrictedGlass))
+                            legibility: settings.panelLegibility, unrestricted: settings.panelUnrestrictedGlass),
+                        animation: settings.panelAnimation, replay: animationReplay)
                     Slider(value: $settings.panelLegibility, in: 0...1) {
                         Text(L10n.tr("Liquid Glass"))
                     } minimumValueLabel: {
@@ -230,16 +232,28 @@ private struct GeneralSettingsPane: View {
                         ))
                 }
                 .toggleStyle(.switch)
-                Picker(selection: $settings.panelAnimation) {
-                    ForEach(PanelAnimation.allCases) { animation in
-                        Text(animation.title).tag(animation)
+                HStack(spacing: 8) {
+                    Picker(selection: $settings.panelAnimation) {
+                        ForEach(PanelAnimation.offered) { animation in
+                            Text(animation.title).tag(animation)
+                        }
+                    } label: {
+                        settingLabel(
+                            L10n.tr("Open Animation"),
+                            description: L10n.tr(
+                                "Reduce Motion in Accessibility settings replaces movement with a fade."))
                     }
-                } label: {
-                    settingLabel(
-                        L10n.tr("Open Animation"),
-                        description: L10n.tr("Reduce Motion in Accessibility settings replaces movement with a fade."))
+                    .pickerStyle(.menu)
+                    Button {
+                        animationReplay += 1
+                    } label: {
+                        Image(systemName: "play.circle")
+                    }
+                    .buttonStyle(.borderless)
+                    .help(L10n.tr("Play Animation"))
+                    .accessibilityLabel(L10n.tr("Play Animation"))
                 }
-                .pickerStyle(.menu)
+                .onChange(of: settings.panelAnimation) { _, _ in animationReplay += 1 }
             }
         }
         .settingsFormStyle()
@@ -250,6 +264,14 @@ private struct GeneralSettingsPane: View {
 /// and tint mapping as the real panel.
 private struct PanelGlassPreview: View {
     let look: PanelGlass.Look
+    let animation: PanelAnimation
+    let replay: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var poseScaleX: CGFloat = 1
+    @State private var poseScaleY: CGFloat = 1
+    @State private var poseOffset: CGFloat = 0
+    @State private var poseBlur: CGFloat = 0
+    @State private var poseOpacity: Double = 1
     @State private var wallpaper: NSImage? = {
         guard let screen = NSScreen.main, let url = NSWorkspace.shared.desktopImageURL(for: screen) else {
             return nil
@@ -277,6 +299,9 @@ private struct PanelGlassPreview: View {
                 // type weight match what the panel shows.
                 panel
                     .frame(width: Self.panelSize.width, height: Self.panelSize.height)
+                    .scaleEffect(x: poseScaleX, y: poseScaleY)
+                    .offset(y: poseOffset)
+                    .opacity(poseOpacity)
                     .scaleEffect(scale)
                     .frame(width: Self.panelSize.width * scale, height: Self.panelSize.height * scale)
             }
@@ -285,6 +310,38 @@ private struct PanelGlassPreview: View {
         .frame(height: 340)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .accessibilityHidden(true)
+        .onChange(of: replay) { _, _ in playEntrance() }
+    }
+
+    /// Replays the panel's entrance with the same spring and fade parameters.
+    private func playEntrance() {
+        let animation = reduceMotion && animation != .none ? PanelAnimation.fade : animation
+        let entrance = animation.previewEntrance
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            poseScaleX = entrance.horizontal.scale
+            poseScaleY = entrance.verticalSpring.scale
+            poseOffset = entrance.offset
+            poseBlur = reduceMotion ? 0 : entrance.blur
+            poseOpacity = 0
+        }
+        // A separate turn commits the starting pose before it animates away;
+        // without animation the panel simply reappears, as the real one does.
+        DispatchQueue.main.asyncAfter(deadline: .now() + (animation == .none ? 0.25 : 0.05)) {
+            guard animation != .none else { poseOpacity = 1; return }
+            let horizontal = entrance.horizontal
+            let vertical = entrance.verticalSpring
+            withAnimation(.spring(response: horizontal.response, dampingFraction: horizontal.dampingFraction)) {
+                poseScaleX = 1
+                poseOffset = 0
+            }
+            withAnimation(.spring(response: vertical.response, dampingFraction: vertical.dampingFraction)) {
+                poseScaleY = 1
+            }
+            withAnimation(.easeOut(duration: entrance.fadeDuration)) { poseOpacity = 1 }
+            withAnimation(.easeOut(duration: entrance.blurDuration)) { poseBlur = 0 }
+        }
     }
 
     private var panel: some View {
@@ -333,6 +390,7 @@ private struct PanelGlassPreview: View {
             .padding(.horizontal, 16)
             .frame(height: 42)
         }
+        .blur(radius: poseBlur)
         .background(Color(nsColor: .windowBackgroundColor).opacity(look.tint))
         .clipShape(shape)
         .panelPreviewGlass(clear: look.clear, in: shape)

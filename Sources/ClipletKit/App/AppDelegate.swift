@@ -107,6 +107,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// A panel merely hidden on deactivation reappears the moment the app is
+    /// reactivated, before `showPanel` runs, and so skips its open animation.
+    func applicationDidResignActive(_ notification: Notification) {
+        closePanel()
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         showPanel()
         return true
@@ -262,8 +268,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         position(panel)
         panel.setGlass(legibility: settings.panelLegibility, unrestricted: settings.panelUnrestrictedGlass)
         NSApp.activate(ignoringOtherApps: true)
-        panel.presentAnimated(settings.panelAnimation)
+        if !panel.isVisible { viewState.notePanelPresented() }
+        panel.presentAnimated(settings.panelAnimation, from: genieOrigin(for: panel))
         viewState.selectFirstIfNeeded()
+    }
+
+    /// The menu bar icon when it shares the panel's screen, otherwise the top
+    /// center of that screen.
+    private func genieOrigin(for panel: NSWindow) -> NSRect {
+        let screen = panel.screen ?? NSScreen.main
+        if let icon = statusItem?.button?.window?.frame, let screen, screen.frame.intersects(icon) { return icon }
+        let frame = screen?.frame ?? panel.frame
+        return NSRect(x: frame.midX - 12, y: frame.maxY - 24, width: 24, height: 24)
     }
 
     private func rememberExternalApplication(_ application: NSRunningApplication?) {

@@ -4,10 +4,11 @@ import SwiftUI
 
 final class OverlayPanel: NSPanel {
     nonisolated static let cornerRadius: CGFloat = 28
-    nonisolated static let animationInset: CGFloat = 12
-    private weak var presentationSurface: NSView?
+    /// Room for entrance offsets and spring overshoot inside the window bounds.
+    nonisolated static let animationInset: CGFloat = 56
     private weak var glassView: NSView?
     private weak var tintView: PanelTintView?
+    private var entranceAnimator: PanelEntranceAnimator?
     var onResignKey: (() -> Void)?
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
@@ -24,16 +25,15 @@ final class OverlayPanel: NSPanel {
         }
     }
 
-    func presentAnimated(_ animation: PanelAnimation) {
+    /// `origin` is where the Genie effect emerges from, in screen coordinates.
+    func presentAnimated(_ animation: PanelAnimation, from origin: NSRect) {
         guard !isVisible else { makeKeyAndOrderFront(nil); return }
         var animation = animation
         if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion, animation != .none { animation = .fade }
-        let duration = animation == .slide ? 0.22 : 0.12
-        let timing = CAMediaTimingFunction(controlPoints: 0.16, 1, 0.3, 1)
+        if animation == .genie, entranceAnimator?.startGenie(from: origin) != true { animation = .scale }
+        let entrance = animation.entrance
         contentView?.layoutSubtreeIfNeeded()
-        let finalFrame = frame
-        if animation == .slide { setFrameOrigin(NSPoint(x: finalFrame.minX, y: finalFrame.minY - 18)) }
-        if animation == .scale { addScaleSpring() }
+        entranceAnimator?.playSpring(entrance)
         alphaValue = animation == .none ? 1 : 0
         makeKeyAndOrderFront(nil)
         // Focusing the search field on open shows the input-method indicator, which
@@ -41,28 +41,15 @@ final class OverlayPanel: NSPanel {
         makeFirstResponder(nil)
         guard animation != .none else { return }
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = duration
-            context.timingFunction = timing
+            context.duration = entrance.fadeDuration
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
             animator().alphaValue = 1
-            if animation == .slide { animator().setFrame(finalFrame, display: true) }
         }
     }
 
-    /// Scales the glass surface around its center without resizing the window
-    /// or reflowing the SwiftUI content.
-    private func addScaleSpring() {
-        guard let layer = presentationSurface?.layer else { return }
-        let scale: CGFloat = 0.94
-        var transform = CATransform3DMakeScale(scale, scale, 1)
-        transform.m41 = layer.bounds.width * (0.5 - layer.anchorPoint.x) * (1 - scale)
-        transform.m42 = layer.bounds.height * (0.5 - layer.anchorPoint.y) * (1 - scale)
-        let spring = CASpringAnimation(keyPath: "transform")
-        spring.stiffness = 520
-        spring.damping = 30
-        spring.fromValue = NSValue(caTransform3D: transform)
-        spring.toValue = NSValue(caTransform3D: CATransform3DIdentity)
-        spring.duration = spring.settlingDuration
-        layer.add(spring, forKey: "panelPresentation")
+    override func orderOut(_ sender: Any?) {
+        entranceAnimator?.stopGenie()
+        super.orderOut(sender)
     }
 
     func setGlass(legibility: Double, unrestricted: Bool) {
@@ -83,6 +70,7 @@ final class OverlayPanel: NSPanel {
 
     func installContent<Content: View>(_ root: Content) {
         let hosting = NSHostingView(rootView: root)
+        hosting.wantsLayer = true
         // One native mask trims both the material and its content. A second
         // SwiftUI mask used a different curve and exposed footer corners.
         // Transparent room around the surface keeps the glass rim from clipping
@@ -129,7 +117,7 @@ final class OverlayPanel: NSPanel {
         material.autoresizingMask = [.width, .height]
         surface.addSubview(material)
         container.addSubview(surface)
-        presentationSurface = surface
+        entranceAnimator = PanelEntranceAnimator(window: self, surface: surface, content: hosting)
         glassView = material
         contentView = container
         initialFirstResponder = container

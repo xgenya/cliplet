@@ -26,6 +26,7 @@ struct MainView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showDeleteConfirmation = false
+    @State private var entranceBlur: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -59,6 +60,19 @@ struct MainView: View {
             .animation(
                 reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.24, dampingFraction: 0.88),
                 value: viewState.showActions)
+        }
+        .blur(radius: entranceBlur)
+        .onChange(of: viewState.panelPresentationCount, initial: true) { _, count in
+            let entrance = settings.panelAnimation.entrance
+            let blur = entrance.blur
+            guard count > 0, blur > 0, !reduceMotion else { return }
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { entranceBlur = blur }
+            // A separate turn commits the blurred state before it animates away.
+            DispatchQueue.main.async {
+                withAnimation(.easeOut(duration: entrance.blurDuration)) { entranceBlur = 0 }
+            }
         }
         .frame(minWidth: OverlayMetrics.minimumWidth, minHeight: OverlayMetrics.minimumHeight)
         .environment(\.locale, L10n.locale)

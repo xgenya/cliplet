@@ -79,7 +79,7 @@ final class AppSettings: ObservableObject {
             Key.pasteAutomatically: true,
             Key.preferPlainText: false,
             Key.panelLegibility: 0.0,
-            Key.panelAnimation: PanelAnimation.fade.rawValue,
+            Key.panelAnimation: PanelAnimation.spotlight.rawValue,
             Key.hotkeyKeyCode: Int(GlobalHotkey.defaultValue.keyCode),
             Key.hotkeyModifiers: Int(GlobalHotkey.defaultValue.carbonModifiers),
             Key.hotkeyKeyEquivalent: GlobalHotkey.defaultValue.keyEquivalent,
@@ -97,7 +97,8 @@ final class AppSettings: ObservableObject {
         preferPlainText = defaults.bool(forKey: Key.preferPlainText)
         panelLegibility = min(max(defaults.double(forKey: Key.panelLegibility), 0), 1)
         panelUnrestrictedGlass = defaults.bool(forKey: Key.panelUnrestrictedGlass)
-        panelAnimation = PanelAnimation(rawValue: defaults.string(forKey: Key.panelAnimation) ?? "") ?? .fade
+        panelAnimation =
+            PanelAnimation(rawValue: defaults.string(forKey: Key.panelAnimation) ?? "")?.resolved ?? .spotlight
         globalHotkey = GlobalHotkey(
             keyCode: UInt32(defaults.integer(forKey: Key.hotkeyKeyCode)),
             carbonModifiers: UInt32(defaults.integer(forKey: Key.hotkeyModifiers)),
@@ -125,19 +126,5 @@ final class AppSettings: ObservableObject {
 
     func setHotkeyRegistrationSucceeded(_ succeeded: Bool) {
         hotkeyRegistrationSucceeded = succeeded
-    }
-}
-
-enum PanelAnimation: String, CaseIterable, Identifiable {
-    case none, fade, slide, scale
-
-    var id: Self { self }
-    @MainActor var title: String {
-        switch self {
-        case .none: return L10n.tr("None")
-        case .fade: return L10n.tr("Fade")
-        case .slide: return L10n.tr("Slide Up")
-        case .scale: return L10n.tr("Zoom")
-        }
     }
 }

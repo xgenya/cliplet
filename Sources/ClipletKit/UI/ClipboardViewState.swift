@@ -8,6 +8,8 @@ final class ClipboardViewState: ObservableObject {
     @Published var selectedID: UUID?
     @Published var showActions = false
     private(set) var actionPresentationID = UUID()
+    /// Changes each time the panel opens, so the view can play its entrance.
+    @Published private(set) var panelPresentationCount = 0
     @Published private(set) var visibleItems: [ClipboardItem] = []
     @Published private(set) var listRows: [HistoryListRow] = []
     private var itemIndices: [UUID: Int] = [:]
@@ -29,6 +31,8 @@ final class ClipboardViewState: ObservableObject {
         if let selectedID, let index = itemIndices[selectedID] { return visibleItems[index] }
         return visibleItems.first
     }
+
+    func notePanelPresented() { panelPresentationCount += 1 }
 
     func toggleActions() {
         if showActions {
